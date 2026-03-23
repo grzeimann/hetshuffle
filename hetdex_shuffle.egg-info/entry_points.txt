@@ -1,0 +1,4 @@
+[console_scripts]
+do_shuffle = hetdex_shuffle.do_shuffle_target:main
+shuffle_config = hetdex_shuffle.copy_config:main
+shuffle_distances = hetdex_shuffle.obj_dist_ifu_vis:main

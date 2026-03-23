@@ -1,0 +1,6 @@
+recursive-include hetdex_shuffle/configs *
+
+include Changelog
+include ez_setup.py
+include README.txt
+include requirements.txt

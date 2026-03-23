@@ -1,0 +1,11 @@
+numpy
+scipy
+astropy
+astroquery
+matplotlib
+pyds9
+pyhetdex
+six
+
+[oracle]
+cx_Oracle

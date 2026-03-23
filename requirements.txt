@@ -1,0 +1,12 @@
+# mandatory requirements to run shuffle
+numpy
+scipy
+astropy
+astroquery
+matplotlib
+pyhetdex --extra-index-url https://gate.mpe.mpg.de/pypi
+six
+
+# optional requirements for shuffle. Uncomment the following lines to install
+# them
+#cx_Oracle

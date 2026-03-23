@@ -1,0 +1,855 @@
+2026-03-19  Greg Zeimann <gregz@astro.as.utexas.edu>:
+	*hetdex_shuffle/findStars.py: Updated PANSTARRS query, ps1_cone_table
+
+2025-01-27  Greg Zeimann <gregz@astro.as.utexas.edu>:
+	*hetdex_shuffle/visualize.py: Catch SDSS image retrieval error and move to other servers
+
+2024-09-03  Greg Zeimann <gregz@astro.as.utexas.edu>:
+	* hetdex_shuffle/visualize.py: Change arguments for Arc due to matplotlib changes
+
+2022-03-14  Greg Zeimann <gregz@astro.as.utexas.edu>:
+	* hetdex_shuffle/visualize.py: Adding g,r,i mags to ACAM csv
+	* hetdex_shuffle/findStars.py: new PANSTARRS querey
+
+2021-11-29  Greg Zeimann <gregz@astro.as.utexas.edu>:
+	* hetdex_shuffle/findStars.py: requests.get() modification
+
+2021-04-30  Greg Zeimann <gregz@astro.as.utexas.edu>:
+	* hetex_shuffle/visualize.py: Add HPFSCI and HPFACAM to ACAM visualization
+
+2019-12-03  Jan Snigula  <snigula@mpe.mpg.de>
+
+	* setup.py: Bumped version to 0.3.5
+	* hetdex_shuffle/findStars.py: Fixed more bytes errors
+
+2020-09-25 Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/findStars.py: Local Pan-STARRS database call and catching a blank error
+
+2020-09-11 Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/findStars.py: Local Pan-STARRS database access edits for functionality
+
+2020-09-10 Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/configs/shuffle.cfg: adding database entries for local search
+	* hetdex_shuffle/findStars.py: Local Pan-STARRS database access
+
+2020-06-12 Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/configs/shuffle.cfg: dpatrol_g1max, dpatrol_g2max to 160, 230 respectively
+
+2020-02-17  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/configs/shuffle.cfg: new acm x,y origin
+
+2019-12-03  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/findStars.py: Changed PanSTARRS query to dr2
+
+2019-11-25  Jan Snigula  <snigula@mpe.mpg.de>
+
+	* hetdex_shuffle/findStars.py: Fixed py3 bug
+
+2019-11-25  Jan Snigula  <snigula@mpe.mpg.de>
+
+	* hetdex_shuffle/sqlcl.py: Fixed bug in py3 conversion
+
+2019-11-25  Jan Snigula  <snigula@mpe.mpg.de>
+
+	* hetdex_shuffle/sqlcl.py: Fixed bug in py3 conversion
+
+2019-11-20  Jan Snigula  <snigula@mpe.mpg.de>
+
+	* hetdex_shuffle/*.py: Made shuffle python2 and python3 compatible
+
+2019-11-18  Greg Zeimann <gregz@astro.as.utexas.edu>:
+	* hetdex_shuffle/visualize.py: added new call to PANSTARRS for g-band image if SkyView fails
+
+2019-08-26  Greg Zeimann <gregz@astro.as.utexas.edu>:
+        * hetdex_shuffle/configs/shuffle.cfg: revert to previous limits on gc1 and gc2 (wfs1 problem)
+
+2019-07-23  Greg Zeimann <gregz@astro.as.utexas.edu>:
+	* hetdex_shuffle/do_shuffle_target.py: correct 00:00:00 issue making ra negative 
+	* hetdex_shuffle/shuffle.py: removed aggressive search 
+
+2019-05-24  Greg Zeimann <gregz@astro.as.utexas.edu>:
+	* hetdex_shuffle/configs/shuffle.cfg: new limits on gc1 and gc2 to avoid wfs1
+
+2019-05-20  Greg Zeimann <gregz@astro.as.utexas.edu>:
+	* hetdex_shuffle/findStars.py: new Pan-STARRS selection for g, r, and i defined mags
+
+2019-05-01  Greg Zeimann <gregz@astro.as.utexas.edu>:
+	* hetdex_shuffle/findStars.py: new Pan-STARRS query for their new API
+
+2019-04-23  Greg Zeimann <gregz@astro.as.utexas.edu>:
+	* hetdex_shuffl/configs/shuffl.cfg: update acam coordinates and rotation
+
+2018-12-16  Greg Zeimann <gregz@astro.as.utexas.edu>:
+	* hetdex_shuffle/findStars.py: Change fastFindStars to use all appropriate filters for target exclusion for each catalog
+
+2018-11-02  Greg Zeimann <gregz@astro.as.utexas.edu>:
+	* hetdex_shuffle/do_shuffle_target.py: Added gaia2radius argument to change the initial search size for a target match
+
+2018-10-30  Greg Zeimann <gregz@astro.as.utexas.edu>:
+	* hetdex_shuffle/findStars.py: Change PANSTARRS query to only retrieve sources with g, r, and i photometry.
+
+2018-10-15  Greg Zeimann <gregz@astro.as.utexas.edu>:
+	* hetdex_shuffle/visualize.py: fixed compose rose
+
+2018-10-08  Greg Zeimann <gregz@astro.as.utexas.edu>:
+	* hetdex_shuffle/configs/fplane.txt: New values implemented
+	* hetdex_shuffle/configs/shuffle.cfg: editted fplane/acam angle and acam pixels for ihmp center
+
+2018-10-08  Greg Zeimann <gregz@astro.as.utexas.edu>:
+	* hetdex_shuffle/do_shuffle_target.py: Added implementation of iterative tangent plane correction for evaluating 0, 0 from target
+
+2018-10-07  Greg Zeimann <gregz@astro.as.utexas.edu>:
+	* hetdex_shuffle/do_shuffle_target.py: Added implementation of fplane angle to get proper 0, 0 for targeting LRS2.
+
+2018-09-24  Greg Zeimann <gregz@astro.as.utexas.edu>:
+	* hetdex_shuffle/findStars.py: SDSS_all option for galaxies in shuffle
+
+2018-08-25  Greg Zeimann <gregz@astro.as.utexas.edu>:
+	* hetdex_shuffle/findStars.py: catch hanging error with Vizier
+	* hetdex_shuffle/do_shuffle_target.py: catch hanging error with Vizier
+
+2018-08-07  Greg Zeimann <gregz@astro.as.utexas.edu>:
+	* hetdex_shuffle/findStars.py: Correct a GAIA2 query fault
+
+2018-07-30  Greg Zeimann <gregz@astro.as.utexas.edu>:
+	* hetdex_shuffle/do_shuffle_target.py: fixed error in logic
+
+2018-07-27  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/configs/shuffle.cfg: new ACAM origin and rotation values
+
+2018-07-18  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/do_shuffle_target.py: change * to / for cos(dec) term in pmRA calculation
+	* hedtex_shuffle/findStars.py: changed * to / for cos(dec term in pmRA calculation
+
+2018-07-17  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/do_shuffle_target.py: add input pmRA, pmDEC for proper motion.  If set use these instead of GAIA2 for target.
+
+2018-07-16  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/do_shuffle_target.py: adjusted input RA Dec for proper motion if there is a match within 2", added "epoch" argument
+	* hetdex_shuffle/findStars.py: added GAIA2 query and inclusion of proper motion for coordinates in every catalog (assuming epoch 2000.0 for all!)
+	* hetdex_shuffle/visualize.py: Added arrows for proper motion
+
+2018-06-28  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/configs/shuffle_version: add shuffle version file
+
+2018-06-01  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/findStars.py: random name for "xml" file related to PANSTARRS
+
+2018-05-16  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/configs/fplane.txt: comment out 025
+	* hetdex_shuffle/shuffle.py: guider mag output commands, removed "/dev/null"
+
+2018-05-11  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/shuffle.py: syscmd extensions for acam fiducial
+	* hetdex_shuffle/configs/fplane.txt: new units added
+	* hetdex_shuffle/findStars.py: PANSTARRS added
+	* hetdex_shuffle/visualize.py: additions for fiducial acam star selection
+
+2018-04-03  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/do_shuffle_target.py: replaced ra_offset/dec_offset with x_offset/y_offset
+
+2018-02-09  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/shuffle.py: small change to name for images/*.png (using ifuslot and track now)
+
+2018-02-01  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/findStars.py: corrected issue with getGuideWFSSol().
+
+2017-12-12  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/visualize.py: adding cardinal directions to ACAM visualization
+	* hetdex_shuffle/configs/fplane.txt: added 022 and modified 073
+	* hetdex_hsuffle/configs/shuffle.cfg: incorporated new changes for IHMP in ACAM
+
+2017-12-01  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/do_shuffle_target.py: edits for formatting
+	* hetdex_shuffle/findStars.py: edit to carry TIC catalog properties and select only M-dwarfs for gc
+	* hetdex_shuffle/visualize.py: add cardinal directions to acam image
+	* hetdex_shuffle/shuffle.py: small edits to cary the new information for TIC
+
+2017-11-20  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/do_shuffle_target.py: changed "visualization" to "visualisation".  
+
+2017-11-03  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/do_shuffle_target.py: added "--hpf" option for selecting only mdwarfs
+	* hetdex_shuffle/shuffle.py: added feature to output "gp_wfs/{}_{}_{}.[g1,g2,w1,w2]cand" files which list the candidate stars in each probe region
+	* hetdex_shuffle/findStars.py: added function to facilite building the probe candidate lists
+
+2017-11-01  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/do_shuffle_target.py: added "--limited_probe_annulus"
+
+2017-10-24  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/configs/fplane.txt: modified to include HPF fibers and 035,036,037
+	* hetdex_shuffle/configs/shuffle.cfg: Added TIC, TESS Input Catalog as an option
+	* hetdex_shuffle/do_shuffle_target.py: Small space edit
+	* hetdex_shuffle/findStars.py: Added a new query for the TESS input catalog, added g mag calculation for GAIA and USNOA2
+	* hetdex_shuffle/shuffle.py: Added star ID and g mag output for syscmd HETcommands
+
+2017-10-06  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/configs/shuffle.cfg: modified the x,y origin of the acam
+	* hetdex_shuffle/configs/fplane.txt: modified 056,066,555 for the IHMP takedown and added 034
+
+2017-09-23  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/fplane.txt: latest fplane file from Karl
+
+2017-09-22  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/shuffle.py: add one more digit of precision to output RA in hetcommands
+	* hetdex_shuffle/configs/shuffle.cfg: changed probemind0 from 22.1 to 24.1 to avoid collision errors
+
+2017-09-18  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/do_shuffle_target.py: removed "2" as an option from track in the argument call as it is not yet properly implemented.
+
+2017-09-06  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/shuffle.py: removed the "-v" option from the outputed HETCOMMANDS.  No longer in use.
+
+2017-08-22  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/findStars.py: corrected return list to include "USNOA2" if SDSS fails
+
+2017-07-31  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/do_shuffle_target.py: added argument "--allprobes_magadd" to make it simpler to change magnitude limit for all probes in one argument.
+	* hetdex_shuffle/do_shuffle_target.py: added argument "--allcams_magadd" as similar above but includes acam
+
+2017-07-14  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/visualize.py: Changed GP output plots to be "name_probe_dir.png"
+	* hetdex_shuffle/shuffle.py: Added equinox to OCD *.cfg, and made small edit for the above visualization change
+
+
+2017-07-12  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/do_shuffle_target.py: fixed "if" statement in ifu_index() 
+
+2017-07-07  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/do_shuffle_target.py: Call of HET_PA from shuffle to get PA for given input AZ
+	* hetdex_shuffle/shuffle.py: Add "id" to OCD *cfg output, created HET_PA() and HET_AZ() to convert between the two
+	* hetdex_shuffle/findstars.py: return the catalog name for later use to print in the OCD *cfg FILE
+	* hetdex_shuffle/parang.py: adjusting the code for the same altitude as TCS uses (55.055223), returning AZ as well as PA
+
+2017-07-06  Greg Zeimann <gregz@astro.as.utexas.edu> 
+	* hetdex_shuffle/shuffle.py: always report the "az=" in *.cfg file for OCD
+
+2017-07-05  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/shuffle.py: Added az to the HETcommands if "--az" is used as input
+	* hetdex_shuffle/shuffle.py: Included output of a *.cfg file in HETcomannds folder for OCD
+
+2017-07-04  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/do_shuffle_target.py: add "az" option as input
+	* hetdex_shuffle/shuffle.py: correct pa calculation for az input, convert to cp for acam image, removed "id=" in HETcommands, ACAM image is "jpg" now
+	* hetdex_shuffle/shuffle.py: removed "go_next" in HETcommands
+	* hetdex_shuffle/configs/shuffle.cfg: set visualize_probestars to False
+
+2017-05-18  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/do_shuffle_target.py: new tangent plane projection
+	* hetdex_shuffle/visualize.py: new tangent plane projection in visualize_acam
+	* hetdex_shuffle/shuffle.py: small edit to input of visualize_acam
+
+2017-05-16  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/configs/shuffle.cfg(fplane.txt): committing files for the mountain
+
+2017-05-15  Greg Zeimann < gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/do_shuffle_target.py: Iteratively solve for the PA and IHMP dec
+
+2017-04-11  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/configs/shuffle.cfg: Meant to better match mountain version
+	* hetdex_shuffle/configs/fplane.txt: Meant to better match mountain version
+
+2017-04-11  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/do_shuffle_target.py: changed to read many of the arguments set in the config file so that the command line is more versatile.
+	* hetdex_shuffle/configs/shuffle.cfg: Added "use_brightness" flag for picking probe stars
+	* hetdex_shuffle/visualize.py: A few adjustments to prevent ds9/xpa issues, but not fully fixed
+
+2017-04-10  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/visualize.py: change skyformat to degrees and try/except saving region file
+
+2017-04-10  Greg Zeimann <gregz@astro.as.utexas.edu>
+
+	* hetdex_shuffle/configs/shuffle.cfg: Adding interactive mode, adding dpatrol_{gd1,wf1,*}targ for finding guide stars near the center of their patrol
+	* hetdex_shuffle/shuffle.py: Moved visualizeDs9 to front of do() function for interactive mode
+	* hetdex_shuffle/findStars.py: Search for stars near patrol center as opposed to brightest
+	* hetdex_shuffle/visualize.py: Solidified interactive mode
+
+2017-03-22  Francesco Montesano <montefra@mpe.mpg.de>
+
+    * hetdex_shuffle/do_shuffle_target.py: check that the ifuslot from the
+	  command line is in the fplane file. Resolves issue #1872
+    * hetdex_shuffle/visualize.py: some PEP8
+
+2017-03-01 Karl Gebhardt <gebhardt@astro.as.utexas.edu>
+
+	* hetdex_shuffle/configs/fplane.txt: update fplane file
+	
+2017-03-01 Daniel Farrow <dfarrow@mpe.mpg.de>
+
+    * hetdex_shuffle/visualize.py: Fix bug introduced by merge 
+
+2017-02-28  Francesco Montesano <montefra@mpe.mpg.de>
+
+	* : merge ^/branches/guide_stars_images onto ^/trunk
+
+2017-02-28  Francesco Montesano <montefra@mpe.mpg.de>
+
+	* : merge ^/trunk onto ^/branches/guide_stars_images
+
+2017-02-28  Francesco Montesano <montefra@mpe.mpg.de>
+
+    * .: update svn:ignore
+    * hetdex_shuffle/configs/shuffle.cfg: add configuration option to plot the
+	  probe stars
+    * hetdex_shuffle/do_shuffle_target.py: add the guide probe images directory
+	  among the list of directories to crete
+    * hetdex_shuffle/shuffle.py: optionally call the code to do the probe stars
+    * hetdex_shuffle/visualize.py: update the code to do the plot
+
+2017-02-27 Daniel Farrow <dfarrow@mpe.mpg.de>
+    * hetdex_shuffle/visualize.py: When drawing the circles, only add one label instead
+                                   of labelling every line. If SDSS and DSS are both
+                                   unavailable, fetch images from PS1 DR1.
+
+2017-02-24  Greg Zeimann <gregz@astro.as.utexas.edu>
+
+	* hetdex_shuffle/visualize.py: If Skyview fails, return zeros for image
+
+2017-02-24  Francesco Montesano <montefra@mpe.mpg.de>
+
+    * hetdex_shuffle/visualize.py: fix LRS location and size in the ACAM image
+
+2017-02-22 Daniel Farrow <dfarrow@mpe.mpg.de>
+
+    * hetdex_shuffle/visualize.py: Plot patrol circle as a group of non-selectable lines (circle
+                                   regions cause trouble with adding and selecting other regions)
+
+2017-02-22  Francesco Montesano <montefra@mpe.mpg.de>
+
+    * hetdex_shuffle/shuffle.py: write the acam stars on the file
+
+2016-10-18  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/shuffle.py: Added the debug note that USNOA2 will be used if SDSS fails
+
+2016-10-17  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/shuffle.py: Use USNOA2 if SDSSDR9 fails for any reason.
+
+2016-10-07  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* hetdex_shuffle/findStars.py: Force GP1 to be CCW of WF1 and GP2 to be CCW of WF2
+2016-10-07  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * setup.py: rename the distribution hetdex_shuffle as per issue #1619
+    * shuffle: renamed hetdex_shuffle
+    * MANIFEST.in: update accordingly
+    * hetdex_shuffle/__init__.py: same
+
+2016-09-28  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* shuffle/findStars.py: added debug argument for fastfindGuideWFSSol
+
+2016-09-16  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* shuffle/config/shuffle.cfg: Changed default magmins and magmaxs for ACAM.
+	     WARNING - This will likely yield few stars.
+	* shuffle/shuffle.py: reverted back to using track in ACAM and HETcommands.
+	* shuffle/shuffle.py: using findStarCand instead of fastfindStarCand for visualization
+		as the former includes the minsep criteria
+	* shuffle/shuffle.py: Changed HETcommands ID to be %i instead of %04d to eliminate leading zeros.
+
+2016-09-15  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * shuffle/do_shuffle_target.py: fix typos
+
+2016-09-15  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * shuffle/do_shuffle_target.py: customize parser to give advises about
+	  negative positional arguments; fix bug with negative dec at hh=00
+
+2016-08-29  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* shuffle/config/shuffle.cfg: added directory entry for HETcommands
+	* shuffle/shuffle.py: HETcommands is written out for each target.  Naming
+		scheme includes the target IFU and the track in addition to the targetID.
+  
+2016-08-27  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* shuffle/findstars.py: corrected the input to the force() function to be the 
+		appropriate catalog for each probe instead of just the gp1 catalog.
+ 
+2016-08-25  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* shuffle/shuffle.py: edited shout.hetcommands output to include path to ACAM images.
+
+2016-08-10  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* shuffle/shuffle.py : added pa and config to the inputs of findStars.getStars.
+		Also, changed call for visualize_acam to use acam_star_cand which calls
+		on acam set mag limits versus the IFU mag limits. 
+	* shuffle/config/shuffle.cfg : added several inputs acam_nstars, acam_minsep, 
+		acam_magmin, acam_magmax.  This is for setting acam mag limits when 
+		setting up.  The current g,r limit are 22.  Also, added acam_x_origin, 
+		acam_y_origin, acam_pix_scale, acam_x_length, acam_y_length for 
+		defining the acam geometry and whether a star falls in the acam.  This
+		can be used in visualize if desired, but is used in findStars.  It is
+		consistent with the visualize acam geometry from several debugging 
+		sessions, but if there is an issue, look towards these variables and
+		findStars:stars_inside_acam
+	* shuffle/findStars.py : Edited getStars() to run stars_inside_acam() after an
+		SDSS catalog has been returned and if no stars are found, then use
+		USNO_A2.  stars_inside_acam() returns a boolean array for whether
+		a candidate star position is in the acam or not.
+  
+2016-08-09  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * shuffle/configs/fplane.txt: updated
+    * touch_commit.sh: fix bug when locale settings assumes UTF-8
+
+2016-08-08  Greg Zeimann <gregz@astro.as.utexas.edu>
+
+	* shuffle/findStars.py : Revised queryUSNO_A2 to use astropy.vo
+		and added query2MASS as a new catalog search options
+	* shuffle/configs/shuffle.cfg : Adjusted the star catalog options
+		to be just SDSSDR9, CWISE, USNOA2, and 2MASS 
+
+2016-07-21  Francesco Montesano  <montefra@mpe.mpg.de>
+
+	* : merge ^/branches/avoid_original_1028 into ^/trunk
+
+2016-07-21  Francesco Montesano  <montefra@mpe.mpg.de>
+
+	* : merge ^/trunk into ^/branches/avoid_original_1028
+
+2016-07-21  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * shuffle/visualize.py: add option to avoid plotting the IFU positions
+	  before shuffling (backward compatible change)
+    * shuffle/configs/shuffle.cfg: add it to the configuration file
+	* setup.py: bump version
+
+2016-07-20  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * README.txt: update with information about touch_commit.sh
+    * setup.py: bump the version to 0.2.0
+    * shuffle/__init__.py: add __full_version__
+    * shuffle/copy_config.py: use the full version
+    * shuffle/do_shuffle_target.py: same
+    * shuffle/obj_dist_ifu_vis.py: same
+
+2016-07-20  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * shuffle/__init__.py: add revision keyword and svn property
+    * touch_commit.sh: added
+
+2016-07-18  Francesco Montesano  <montefra@mpe.mpg.de>
+
+	* : merge ^/branches/offset_1552 into ^/trunk
+
+2016-07-18  Francesco Montesano  <montefra@mpe.mpg.de>
+
+	* : merge ^/trunk into ^/branches/offset_1552
+
+2016-07-18  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * shuffle/findStars.py: fixed nasty bug that made SDSSDR9 queries always
+	  fails (NEVER EVER use except without explicit errors)
+    * shuffle/visualize.py: remove empty try-except
+
+2016-07-18  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * shuffle/visualize.py: Correctly get the center of the ACAM and the box;
+	  adjust plot borders
+    * shuffle/configs/shuffle.cfg: deprecate the acam_size option; set the acam
+	  offset to -1.69
+
+2016-07-15  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * README.txt: update installation info
+    * shuffle/configs/shuffle.cfg: add offsets section; use the proper acam size
+    * shuffle/visualize.py: add offsets where needed. Full focal plane works
+	  fine. ACAM visualisation is still under work. Offset not propagated into
+	  the start finding
+
+2016-07-12  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * shuffle/visualize.py: properly rotate the texts in the acam image (issue
+	  #1548)
+
+2016-07-12  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * shuffle/configs/shuffle.cfg: convert the file type to unix to have the
+	  correct line ending. See issue #1549
+    * shuffle/findStars.py: same
+    * shuffle/parang.py: same
+    * shuffle/shuffle.py: same
+    * shuffle/copy_config.py: make sure that the configuration files are copied
+	  wit the correct line endings.
+
+2016-06-27  Francesco Montesano  <montefra@mpe.mpg.de>
+
+	* : merge ^/branches/pep8_package into ^/trunk
+
+2016-06-27  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * setup.py: bump version to 0.1.0
+     shuffle/configs/shuffle.cfg: update output file names (Karl suggestion)
+
+2016-06-23  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * MANIFEST.in: added
+    * setup.py: make sure config files are installed
+    * README.txt: udate
+    * shuffle/configs/shuffle.cfg: add region files directory
+    * shuffle/do_shuffle_target.py: create it
+    * shuffle/shuffle.py: fix ds9 visualization parameters
+    * shuffle/visualize.py: use the region files directory from the
+	  configuration file
+
+2016-06-23  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * shuffle/visualize.py: add stars positions in the acam reference system;
+	  fix bug with LRS2 position in acam
+    * shuffle/configs/fplane.txt: update the LRS2 in the focal plane
+
+2016-06-23  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * shuffle/configs/fplane_w_lrs.txt: removed
+    * shuffle/configs/shuffle.cfg: remove the fplane lrs entry, add ds9 section
+    * shuffle/copy_config.py: remove the extra fplane file
+    * shuffle/do_shuffle_target.py: add function to push xpa_method to the
+	  environment
+    * shuffle/obj_dist_ifu_vis.py: use standard fplane file
+    * shuffle/shuffle.py: remove calls to atof
+    * shuffle/sqlcl.py: use string methods
+    * shuffle/visualize.py: add comment about import pyds9
+
+2016-06-23  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * shuffle/parang.cpp: removed
+    * shuffle/sqlcl.py: PEP8 and __future__ 
+
+2016-06-22  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * shuffle/obj_dist_ifu_vis.py: PEP8 and style improvements; command line
+	  parsing
+    * setup.py: add the above as 'shuffle_distances' entry point
+
+2016-06-22  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * shuffle/do_shuffle_target.py: override the print function to ask
+	  developers to replace print with log.xxxx
+    * shuffle/findStars.py: use logging in some function, some PEP8
+    * shuffle/shuffle.py: same
+    * shuffle/visualize.py: same
+
+2016-06-22  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * shuffle/do_shuffle.py: remove
+    * shuffle/do_shuffle_target.py: fix command line; setup logging system
+    * shuffle/shuffle.py: use logging instead of printing in do function
+
+2016-06-22  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * README.txt: renamed and updated
+    * requirements.txt: update dependences
+    * setup.py: use the new README file; update dependences
+    * shuffle/configs/shuffle.cfg: remove the input value
+    * shuffle/findStars.py: remove esutil package
+    * shuffle/shuffle.py: remove spurious print
+
+2016-06-22  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * setup.py: add shuffle_config entry point
+    * shuffle/__init__.py: add version number
+    * shuffle/copy_config.py: add implementation of the shuffle_config
+	  executable
+
+2016-06-22  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * .: merge ^/trunk into ^/branches/pep8_package
+    * shuffle/configs/shuffle.cfg: add output directory names in the
+	  configuration file
+    * shuffle/findStars.py: propagate the cache directory into the sdss dr9
+	  query and add some docstring
+    * shuffle/shuffle.py: use the directories from the configuration file
+
+2016-06-21  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * ez_setup.py: added
+    * setup.py: add six as dependency
+	* shuffle/do_shuffle_target.py: use internal configuration and fplane file
+	  if none found; create extra directories if necessary
+    * shuffle/configs/shuffle.cfg: create configuration entries wit the
+	  directory names
+    * shuffle/handle_local_catalogue.py: fix import and use the __future__
+    * shuffle/do_shuffle.py: same
+    * shuffle/obj_dist_ifu_vis.py: same
+    * shuffle/parang.py: same
+    * shuffle/shuffle.py: same
+    * shuffle/sqlcl.py: same
+
+2016-06-21  Francesco Montesano  <montefra@mpe.mpg.de>
+
+	* src: renamed shuffle
+    * setup.py: added to make shuffle pip-installable
+    * do_shuffle.py: moved into shuffle
+    * do_shuffle_target.py: same
+    * obj_dist_ifu_vis.py: same
+    * fplane.txt: moved into shuffle/configs
+    * fplane_w_lrs.txt: same
+    * shuffle.cfg: same
+    * cache: removed
+    * images: same
+    * intermediate.dat: same
+    * mkifu_centers.py: same
+    * shuffle.html: same
+    * survey_eq.dat: same
+    * survey_main.dat: same
+    * web_shuffle.py: same
+
+2016-06-21  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * requirements.txt: add astroquery dependency
+    * src/visualize.py: flip the image before saving, to have the strings
+	  correctly shown
+    * src/findStars.py: lots of PEP8 and __future__
+
+2016-06-20  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * do_shuffle.py: PEP8 and __future__
+    * do_shuffle_target.py: same
+    * mkifu_centers.py: same
+    * src/findStars.py: same
+    * src/visualize.py: same
+    * requirements.txt: add scipy
+
+2016-06-20  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * src/visualize.py: a lot of PEP8 fixes, still many to come
+
+2016-06-20  Sungryong Hong  <shong@astro.as.utexas.edu>
+
+	* src/shuffle.py: added HETCommands.closeFile(cls,f) to fix the error "Valueerror : I/O operation on closed file."
+	* added the directory "./ACAMimages", which is now mandatory to avoid crashes.
+
+2016-06-20  Karl Gebhardt  <gebhardt@astro.as.utexas.edu>
+
+	* requirements.txt: remove pyhetdex version constraint
+	* src/visualize.py: changed name of acam png
+	* fplane.txt: added current fplane file
+	* shuffle.cfg: included the excluded IFUSLOTs
+	* src/shuffle.py: new fplane format, exclude id's for shuffle
+
+2016-06-14  Francesco Montesano  <montefra@mpe.mpg.de>
+
+	* requirements.txt: pyhetdex<0.8 to avoid breaking the code
+
+2016-06-14  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * requirements.txt: update pyds9 and pyhetdex requirements to use the mpe
+	  pypi server
+
+2016-06-14  Karl Gebhardt <gebhardt@astro.as.utexas.edu>
+
+    * included LRS2 in the acam
+    * fplane.txt with the proper LRS2
+    * fixed probe star selection logic
+    * fixed ifu_ids throughout
+    * added probe angular separation in shuffle.cfg
+    * changed shuffle.cfg parameters to be consistent with telescope
+
+2016-06-05  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* src/visualize.py: Added a new function "retrive_image_SkyView" which
+	relies on astroquery.  This is the new default if RA and Dec are out of
+	SDSS coverage.
+
+2016-06-04  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* src/visualize.py: Added bounding box for ACAM.
+	* src/visualize.py: Changed pixel scale from 0.5 to 0.25" for SDSS image for ACAM.
+
+2016-06-03  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* src/visualize.py: Adjusted visualize_acam to rotate and flip about the
+	PA for the TO.
+
+2016-05-03  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* do_shuffle_target.py: added "target" input for naming the desired shot.
+	* src/shuffle.py: included new input of "targetID"
+	* src/visualize.py: writes out region file if VisualizeDs9 is on.  The region
+	file is written into "regions" folder with the "targetID".reg as a name.
+
+2016-04-25  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* do_shuffle_target.py: Allows shuffle to place a target/center on a particular
+	IFU Slot ID.  
+	* src/shuffle.py: made edits for for new targeting possiblities
+	* src/visualize.py: made edits for visualizing target and DSS ds9 option
+	* shuffle.cfg: Changed magnitudes for GP1, WFS1, WFS2 to very faint since they are not
+	currently available and this simple/stupid modification makes them less important in the shuffle 
+	algorithm. 
+
+2016-03-21  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* src/visualize.py: removed "scale" from input argument call for "retrieve_image_DSS"
+
+2015-11-13  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* src/findStars.py: added force function and refined the code as
+	per Francesco's suggestions
+
+2015-11-14  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * do_shuffle.py: if give, push force_* command line options into the
+	  configuration object
+
+2015-11-13  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* do_shuffle.py: added command line option --force-wfs
+
+2015-11-13  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* src/visualize.py: created "visualize_acam" for acquisition
+	camera field
+	* shuffle.cfg: added keys for forcing guider or wave front sensor
+	stars, for visualizing the ACAM field, and for options related to
+	the SDSS finding chart image
+	* src/findStars.py: included a new set of conditional statements
+	in fastfindStarCand to allow us to force the ID of any given guide
+	or wave front sensor probe
+	* src/shuffle.py: added call to visualize the ACAM field if key is
+	set
+	
+2015-11-13  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * readme.txt: update readme file
+
+2015-11-13  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * do_shuffle.py: add command line parsing; parse the configuration file
+	  right ahead; pass the command line arguments to shuffle functions
+    * src/shuffle.py: pass the command line arguments around where needed;
+	  remove the global configuration object; do a lot of PEP8
+
+2015-11-04 Daniel Farrow <dfarrow@mpe.mpg.de>
+
+    * readme.txt: Added documentation for how to use
+      local catalogues instead of online databases. 
+      Added the contributors to the top of the 
+      document.
+    * Changlelog: Added log entry from 2015-03-20 that I forgot
+                  to add at the time 
+
+2015-10-30  Sungryong Hong  <shong@astro.as.utexas.edu>
+
+    * readme.txt: new contributors added
+    * requirements.txt: use svn pyhetdex
+    * shuffle.cfg: better default values, patrol regions added
+    * src/findStars.py: overal improvements in the functions used to find stars
+    * src/shuffle.py: new grid search, new guide+wfs search
+    * survey_eq.dat: removed
+    * survey_main.dat: update shot positions
+
+2015-10-11  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* src/visualize.py: added exception for HTTP error in image retrieval
+	* src/visualize.py: added PA visualization 
+	* src/visualize.py: included patrol regions for guide and wavefront sensors
+	* shuffle.cfg: a bit messy still, but includes patrol region angles for guide
+	and wavefront sensors
+
+2015-09-25  Greg Zeimann <gregz@astro.as.utexas.edu>
+	* src/visualize.py: created "label" to mark IFUs for reference
+	* src/visualize.py: created "plotFocalPlaneLRS" to add LRS boxes
+	* src/visualize.py: created "visualize_nearby_gal" for zoom-in on OoI
+	* obj_dist_ifu_vis.py: created new script to find closest IFU
+	to OoI and create a zoom-in finding chart for that source
+	* src/shuffle.py: pickshuffle edited by Sungryong for optimization
+	* fplane_w_lrs.txt: copied fplane.txt and added two rows for LRS
+	* shuffle.cfg: added lrs_sizex, lrs_sizey, and closestcatalog. the
+	latter refers to the output of obj_dist_ifu_vis.py and returns a
+	catalog of closest IFU and LRS unit to object of interest (OoI)
+
+2015-08-10  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * ifu_centers.dat: replaced by ``fplane.txt``
+    * fplane.txt: copied from project:vhc-config
+    * shuffle.cfg: use it
+    * do_shuffle.py: tabs -> 4 spaces, print function, PEP8 compliance
+    * src/shuffle.py: same, plus parse the new fplane file
+	* requirements.txt: add pyhetdex dependency
+	* readme.txt: same
+
+2015-07-15  Francesco Montesano  <montefra@mpe.mpg.de>
+
+    * src/visualize.py: fix issue #955
+    * readme.txt: improve installation instructions
+    * requirements.txt: list external dependences for use with pip
+    * src/shuffle.py: remove ``None`` comparison warnings
+
+2015-06-08  snigula  <snigula@ex-mac05.mpe.mpg.de>
+
+	* do_shuffle.py: Cleaned up imports
+	* src/visualize.py: Cleaned up imports, moved to astropy
+	* src/shuffle.py: Cleaned up imports
+	* src/parang.py: Replaced math import with numpy
+	* src/findStars.py: Cleaned up imports, added support for local cure-wise database, currently very slow.
+
+2015-03-20 Daniel Farrow <dfarrow@mpe.mpg.de>
+
+        * src/handle_local_catalogue: can use a local catalogue instead of an online
+                                      database
+        * src/shuffle.py: Changes to use the above
+        * shuffle.cfg: Added localcat option
+
+2014-06-11  Francesco Montesano  <montefra@mpe.mpg.de>
+
+	* src/visualize.py: explicitly close figures at the end of visualise.
+	Should solve issue #596
+	* svn:ignore: .project file ignored
+
+
+2014-06-11  Francesco Montesano  <montefra@mpe.mpg.de>
+
+	* src/visualize.py: force `text.usetex` parameter to be `False` to be
+	able to use unicode symbols in the figures
+
+2014-04-28  Maximilian Fabricius  <mxhf@mpe.mpg.de>
+
+	* src/shuffle.py: Improved reporting on why a shuffle fails (see .info file). 
+
+2014-03-20  Maximilian Fabricius  <mxhf@mpe.mpg.de>
+
+	* src/shuffle.py: Removed standard parameters for shuffle. Dangerous. This may break thing. These parameters have to be retrieved from the config file though.
+	* src/shuffle.py: Extended the probe star catalog to contain also the shot IDs. Added IFU star catalog.
+	* mkifu_centers.py: Added. Simple script to generate focal plane layout.
+	* src/shuffle.py: Modified. Now read ifu_centers.dat in the format from mkifu_centers.py. First ID column is skipped.
+	* ifu_center.dat: New version according to the "hexagonal" layout as given in "VIRUS IFU layout" V4 March 2014 by Gary Hill.
+	* survey_main.dat: New version according Chi Ting's proposed layout and implemented in Martin's planning tool. The main field.
+	* survey_eq.dat: New version according Chi Ting's proposed layout and implemented in Martin's planning tool. The equatorial field.
+ 
+2013-11-21  Maximilian Fabricius  <mxhf@mpe.mpg.de>
+
+	* src/findStars.py: Fixed to deal with new header line of SDSS (addresses Bug 33).
+	* readme.txt: Converted to markdown (addresses Feature 33).
+
+2013-05-16 Yi-Hao Chen <yihao@mpe.mpg.de>
+
+	* src/sqlcl.py: Updated to query SDSS DR9 database. 
+	* src/visualize.py: Improved DS9 visualization. 
+	* src/findStars.py: Now excludes saturated star when querying SDSS.
+	* src/shuffle.py: Minor syntax corrected.
+	* do_shuffle.py: Minor bug fixed.
+	* web_shuffle.py: Minor bug fixed.
+
+2013-05-13 Yi-Hao Chen <yihao@mpe.mpg.de>
+
+	* src/visualize.py: Added visualizeDS9(). Output format changed to png. Inverted image issue might remain.
+	* src/findStars.py: Now executes findStarCand inside function findGuideWFSSol
+	* src/shuffle.py: Updated visualization and usage of findGuideWFSSol(). 
+	* shuffle.cfg: Added visualizeDS9 option.
+	* do_shuffle.py: Updated usage of shuffle.do().
+
+2013-05-10  Maximilian Fabricius  <mxhf@mpe.mpg.de>
+
+	* src/visualize.py: Fixed inverted image of shot visualisation. 
+
+2013-04-18  Maximilian Fabricius  <mxhf@mpe.mpg.de>
+
+	* src/shuffle.py: Minor bug fix.
+	* src/shuffle.py: Now writes calatog of guide probe and wavefront sensor stars. IDs for those stars now listed in X.result.
+	* shuffle.cfg: Removed test entries.
+
+2012-11-08 Yi-Hao Chen <yihao@mpe.mpg.de>
+
+	* src/shuffle.py: Main functions for shuffling.
+	* src/findStars.py: Seperated from shuffle.py, with communication to online archive server. USNO_A2 catalog works fine now.
+	* src/visualize.py: Separated from shuffle.py, mainly the visualization utilities. Transformation matrix is obtained from fits header for DSS image, and it has now scale and directions.
+	* do_shuffle.py: Wrapper for command line execution, see readme.txt.
+	* web_shuffle.py: Wrapper for web-based call, not fully tested yet.
+
+
+2012-10-14  Yi-Hao Chen  <yihao@mpe.mpg.de>
+
+	* shuffle.py: Turn it into a semi-online version. It downloads the image from SDSS or DSS server, and overplots the focal plane with matplotlib.
+
+
+2012-08-23  Maximilian Fabricius  <mxhf@mpe.mpg.de>
+
+	* parang.py: Rewritten by Mark to include latest HET latitude and correct limits (see his email from 13.9.2012).
+	* shuffle.py: Use new version of parang provided by Mark.
