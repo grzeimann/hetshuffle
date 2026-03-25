@@ -15,9 +15,13 @@ import astropy.units as aunit
 from astroquery.skyview import SkyView
 import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib.patches import (RegularPolygon, Circle, Rectangle, FancyArrow,
+from matplotlib.patches import (RegularPolygon, Circle, Rectangle, FancyArrow, Polygon,
                                 Arc, Arrow)
 from matplotlib.lines import Line2D
+from reproject import reproject_interp
+from astropy.visualization import ImageNormalize, PercentileInterval, AsinhStretch
+from astropy.wcs import WCS
+from astropy.stats import biweight_location, biweight_midvariance, mad_std
 from matplotlib.collections import PatchCollection
 import numpy
 import six
@@ -145,19 +149,7 @@ def retrieve_image(ra, dec, size, config, yflip, scale=1.5):
     coverage, it uses DSS image instead.
     (ra, dec, size) in degree
     """
-    if SDSS_coverage(ra, dec):
-        try:
-            return retrieve_image_SDSS(ra, dec, size, config, yflip, scale)
-        except Exception:
-            try:
-                return retrieve_image_SkyView(ra, dec, size, yflip, scale)
-            except Exception:
-                return retrieve_image_PANSTARRS(ra, dec, size, yflip, scale)
-    else:
-        try:
-            return retrieve_image_SkyView(ra, dec, size, yflip, scale)
-        except Exception:
-            return retrieve_image_PANSTARRS(ra, dec, size, yflip, scale)
+    return retrieve_image_hips(ra, dec, size, yflip, scale)
 
 
 def return_blank_image(size_pix, scale):
@@ -1158,12 +1150,64 @@ def visualize_acam(s, acamloc, ifu_centers, ifu_ids, guideWFSSol,
                                                                  "yflip"),
                                                0.25)
 
-    # size, center and pixel scale for the image
-    x_pix_img, y_pix_img = imarray.shape[:2]
-    img_center_x, img_center_y = x_pix_img / 2., y_pix_img / 2.
-    img_scale_x = img_size * 3600. / x_pix_img  # arcsec / pix
-    img_scale_y = img_size * 3600. / y_pix_img
+    # NEW: delegate ACAM visualization to the cleaner implementation
+    try:
+        # Build an input WCS for the retrieved image using the authoritative
+        # sky center and the returned CD/pixel scale. Define WCS entirely from
+        # CRVAL=(ra_shuffle,dec_shuffle), CRPIX=(nx+1)/2,(ny+1)/2 and CD.
+        ny, nx = imarray.shape[:2]
+        w_in = WCS(naxis=2)
+        w_in.wcs.ctype = ["RA---TAN", "DEC--TAN"]
+        w_in.wcs.crval = [ra_shuffle, dec_shuffle]
+        w_in.wcs.crpix = [(nx + 1.0) / 2.0, (ny + 1.0) / 2.0]
+        # CD is a numpy.matrix; convert to ndarray
+        w_in.wcs.cd = numpy.array([[float(CD[0, 0]), float(CD[0, 1])],
+                                   [float(CD[1, 0]), float(CD[1, 1])]])
+        hdu = fits.PrimaryHDU(data=imarray, header=w_in.to_header())
+        hdul = fits.HDUList([hdu])
 
+        # Build candidate star tuples: (ra, dec, label, g, r, i)
+        cand = []
+        for o in cal_star_cand:
+            try:
+                label = f"{int(o[0])}:{int(o[1])}"
+            except Exception:
+                label = "star"
+            # Try to extract g, r, i if available (legacy indices: -6,-5,-4)
+            try:
+                gmag = float(o[-6])
+                rmag = float(o[-5])
+                imag = float(o[-4])
+            except Exception:
+                gmag = numpy.nan
+                rmag = numpy.nan
+                imag = numpy.nan
+            cand.append((float(o[2]), float(o[3]), label, gmag, rmag, imag))
+
+        visualize_acam_clean(
+            ra_shuffle,
+            dec_shuffle,
+            pa,
+            hdul,
+            cand,
+            ifu_centers,
+            ifu_ids,
+            config,
+            filename,
+        )
+        return None
+    except Exception:
+        # Fall back to legacy plotting below if anything goes wrong
+        pass
+
+    # size, center and pixel scale for the image
+
+    y_pix_img, x_pix_img = imarray.shape[:2]
+    img_center_x, img_center_y = x_pix_img / 2., y_pix_img / 2.
+
+    # pixel scale from CD, in arcsec / pix
+    img_scale_x = 3600.0 * numpy.sqrt(CD[0, 0] ** 2 + CD[1, 0] ** 2)
+    img_scale_y = 3600.0 * numpy.sqrt(CD[0, 1] ** 2 + CD[1, 1] ** 2)
     # create figure
     fg = plt.figure(figsize=(x_pix_img/dpi, y_pix_img/dpi), dpi=dpi,
                     frameon=False)
@@ -1171,6 +1215,7 @@ def visualize_acam(s, acamloc, ifu_centers, ifu_ids, guideWFSSol,
     ax.axis('off')
 
     # add the image
+    # Apply robust asinh stretch with black background and percentile upper bound
     ax.imshow(imarray, origin='lower', cmap='gray')
     # add a circle with the center of the focal plane
     ax.add_patch(Circle((img_center_x, img_center_y),
@@ -1195,6 +1240,7 @@ def visualize_acam(s, acamloc, ifu_centers, ifu_ids, guideWFSSol,
     # diff_fplane_acam = (dx_fplane_acam**2 + dy_fplane_acam**2) ** 0.5
     # x_center_acam = diff_fplane_acam * numpy.cos(pa_offset_rad - numpy.pi)
     # y_center_acam = diff_fplane_acam * numpy.sin(pa_offset_rad - numpy.pi)
+
     acam_center_angle = pa_offset_rad  # - numpy.pi
     x_center_acam = (dx_fplane_acam * numpy.cos(acam_center_angle) +
                      dy_fplane_acam * numpy.sin(acam_center_angle))
@@ -1250,7 +1296,8 @@ def visualize_acam(s, acamloc, ifu_centers, ifu_ids, guideWFSSol,
         DS9region.writeRegion(f_ds9region, xn, yn, 5.)
         ax.text(x, y, '{0:.1f},{1:.1f}'.format(float(xn), float(yn)),
             color='magenta', size=1.5/img_scale_x, ha='center',
-                va=vertical_alignment, rotation=-pa_offset, zorder=10)
+                va=vertical_alignment, rotation=-pa_offset, zorder=10,
+                clip_on=False)
     positions = numpy.array(positions)
     mags = numpy.array(mags)
     inds = numpy.argsort(mags)
@@ -1289,6 +1336,17 @@ def visualize_acam(s, acamloc, ifu_centers, ifu_ids, guideWFSSol,
     y_max = min(y_max_v, y_may_ax)
     ax.set_xlim(left=x_max, right=x_min)
     ax.set_ylim(bottom=y_min, top=y_max)
+
+    # Add a small buffer so labels near the ACAM edge are not cut off
+    try:
+        bx0, bx1 = ax.get_xlim()
+        by0, by1 = ax.get_ylim()
+        buf = 20
+        # Expand regardless of axis direction (x may be inverted)
+        ax.set_xlim(bx0 - buf, bx1 + buf)
+        ax.set_ylim(by0 - buf, by1 + buf)
+    except Exception:
+        pass
 
     # mF
     # we maintain a list of guide star coordinates in the image
@@ -1502,3 +1560,428 @@ def visualizeDS9(s, r, ifu_centers, ifu_ids, guideWFSSol, cal_star_cand,
                         guideWFSSol[j][2] = float(s[1])
                         guideWFSSol[j][3] = float(s[2])
     return guideWFSSol
+
+def retrieve_image_hips(ra, dec, fov_deg, yflip=True, scale=1.5):
+    surveys = ["CDS/P/PanSTARRS/DR1/g", "CDS/P/DSS2/blue", "CDS/P/SDSS9/g"]
+    url = "https://alasky.cds.unistra.fr/hips-image-services/hips2fits"
+    width = int(fov_deg * 3600. / scale)
+    height = int(fov_deg * 3600. / scale)
+    # hips2fits defines fov as the size of the largest image dimension
+    pixscale = float(fov_deg) / float(max(width, height))   # deg / pixel
+    cd11, cd22 = -pixscale, pixscale
+    if yflip:
+        cd22 *= -1.0
+
+    for survey in surveys:
+        params = {
+            "hips": survey,
+            "ra": ra,
+            "dec": dec,
+            "fov": fov_deg,
+            "width": width,
+            "height": height,
+            "format": "fits",
+            "projection": "TAN",
+        }
+        r = requests.get(url, params=params, timeout=20)
+        r.raise_for_status()
+
+        hdul = fits.open(BytesIO(r.content))
+        imarray = hdul[0].data
+
+        if imarray is not None and min(imarray.shape[-2:]) > 32:
+            if yflip:
+                imarray = imarray[::-1]
+
+            CD = numpy.matrix([[cd11, 0.0],
+                           [0.0,  cd22]])
+
+            return imarray, CD, r.url, survey
+    return return_blank_image(width, scale)
+
+
+
+def _build_acam_wcs(ra0, dec0, pa_deg, acam_offset_deg,
+                    acam_x_origin, acam_y_origin,
+                    acam_pix_scale, acam_x_length, acam_y_length):
+    """
+    Build the output WCS in ACAM detector coordinates.
+
+    The pixel (acam_x_origin, acam_y_origin) is the shuffle center (ra0, dec0).
+    ACAM pixel scale is in arcsec/pixel.
+    """
+    theta = numpy.deg2rad(pa_deg + 90.0 + acam_offset_deg)
+    s = acam_pix_scale / 3600.0  # deg / pixel
+    c, sn = numpy.cos(theta), numpy.sin(theta)
+
+    # Detector x/y to sky east/north, with east left on the sky image
+    cd = numpy.array([
+        [-s * c,  s * sn],
+        [ s * sn,  s * c],
+    ])
+
+    w = WCS(naxis=2)
+    w.wcs.ctype = ["RA---TAN", "DEC--TAN"]
+    w.wcs.crval = [ra0, dec0]
+    w.wcs.crpix = [acam_x_origin + 1.0, acam_y_origin + 1.0]  # FITS is 1-based
+    w.wcs.cd = cd
+    w.array_shape = (int(round(acam_y_length)), int(round(acam_x_length)))
+    return w
+
+
+def _sky_to_acam(ra, dec, ra0, dec0, pa_deg, acam_offset_deg,
+                 acam_pix_scale, acam_x_origin, acam_y_origin):
+    """
+    Convert sky coordinates to ACAM x,y in pixels.
+    """
+    east = (ra - ra0) * numpy.cos(numpy.deg2rad(dec0)) * 3600.0
+    north = (dec - dec0) * 3600.0
+
+    theta = numpy.deg2rad(pa_deg + 90.0 + acam_offset_deg)
+    c, s = numpy.cos(theta), numpy.sin(theta)
+
+    dx_arc = -c * east + s * north
+    dy_arc =  s * east + c * north
+
+    x = acam_x_origin + dx_arc / acam_pix_scale
+    y = acam_y_origin + dy_arc / acam_pix_scale
+    return x, y
+
+
+def _draw_cardinal_directions(ax, x0, y0, pa_deg, acam_offset_deg, length=60):
+    """
+    Draw N and E arrows directly in ACAM coordinates.
+    """
+    theta = numpy.deg2rad(pa_deg + 90.0 + acam_offset_deg)
+    c, s = numpy.cos(theta), numpy.sin(theta)
+
+    # north in ACAM pixels
+    nx =  s * length
+    ny =  c * length
+
+    # east in ACAM pixels
+    ex = -c * length
+    ey =  s * length
+
+    ax.plot([x0, x0 + nx], [y0, y0 + ny], "r-", lw=0.6)
+    ax.plot([x0, x0 + ex], [y0, y0 + ey], "r-", lw=0.6)
+    ax.text(x0 + nx * 1.15, y0 + ny * 1.15, "N", color="r", ha="center", va="center", fontsize=8)
+    ax.text(x0 + ex * 1.15, y0 + ey * 1.15, "E", color="r", ha="center", va="center", fontsize=8)
+
+
+def _lrs2_box(center_arcsec, size_arcsec=(12.0, 6.0)):
+    """
+    Simple rectangle around an IFU center in ACAM-native tangent-plane units.
+    Adjust size if you want a more exact footprint.
+    """
+    cx, cy = center_arcsec
+    hx, hy = 0.5 * size_arcsec[0], 0.5 * size_arcsec[1]
+    return numpy.array([
+        [cx - hx, cy - hy],
+        [cx + hx, cy - hy],
+        [cx + hx, cy + hy],
+        [cx - hx, cy + hy],
+    ])
+
+
+def _arcsec_to_acam_poly(poly_arcsec, acam_pix_scale, acam_x_origin, acam_y_origin, acam_offset_deg):
+    """
+    Convert tangent-plane offsets (arcsec) to ACAM pixel coordinates.
+
+    Applies a rotation by acam_offset (degrees) only — no additional 90° term —
+    before scaling by the ACAM pixel scale and translating by the ACAM origin.
+
+    Parameters
+    ----------
+    poly_arcsec : (N, 2) array-like
+        Offsets in arcsec, columns are (east, north) relative to shuffle center.
+    acam_pix_scale : float
+        ACAM pixel scale in arcsec/pixel.
+    acam_x_origin, acam_y_origin : float
+        ACAM detector pixel coordinates of the shuffle center.
+    acam_offset_deg : float
+        Rotation to apply (degrees), consistent with ACAM offset definition.
+    """
+    theta = numpy.deg2rad(acam_offset_deg)
+    c, s = numpy.cos(theta), numpy.sin(theta)
+    dx = poly_arcsec[:, 0]
+    dy = poly_arcsec[:, 1]
+    dx_r = c * dx - s * dy
+    dy_r = s * dx + c * dy
+    x = acam_x_origin + dx_r / acam_pix_scale
+    y = acam_y_origin + dy_r / acam_pix_scale
+    return numpy.column_stack([x, y])
+
+
+def _en_arcsec_to_acam(points_arcsec, pa_deg, acam_offset_deg, acam_pix_scale, acam_x_origin, acam_y_origin):
+    """
+    Map an array of (east, north) offsets in arcsec to ACAM pixel coordinates
+    using the ACAM orientation (pa + 90 + acam_offset) and pixel scale.
+
+    points_arcsec: array-like, shape (N, 2)
+    Returns: ndarray (N, 2) of (x, y) pixels in ACAM frame.
+    """
+    pts = numpy.asarray(points_arcsec, dtype=float)
+    if pts.ndim == 1:
+        pts = pts.reshape(1, 2)
+    theta = numpy.deg2rad(pa_deg + 90.0 + acam_offset_deg)
+    c, s = numpy.cos(theta), numpy.sin(theta)
+    east = pts[:, 0]
+    north = pts[:, 1]
+    dx_arc = -c * east + s * north
+    dy_arc =  s * east + c * north
+    x = acam_x_origin + dx_arc / acam_pix_scale
+    y = acam_y_origin + dy_arc / acam_pix_scale
+    return numpy.column_stack([x, y])
+
+
+def plotFocalPlaneLRS_acam(pa, ra0, dec0, ifu_centers_deg, ifu_ids, config, color='lime', linewidth=0.8, text_ax=None, text_rot=None):
+    """
+    Plot LRS2/HPF overlays using ACAM pixel coordinates.
+
+    - ifu_centers_deg are in degrees (IFU-frame x,y relative to shuffle center).
+    - Convert IFU centers to RA/Dec using pyhetdex TangentPlane, then map to ACAM using the ACAM WCS/orientation.
+
+    Returns a PatchCollection that can be added to axes.
+    """
+    log = logging.getLogger('shuffle')
+
+    # Geometry sizes
+    lrs_sizex_deg = config.getfloat("General", "lrs_sizex")
+    lrs_sizey_deg = config.getfloat("General", "lrs_sizey")
+    lrs_sizex_arc = lrs_sizex_deg * 3600.0
+    lrs_sizey_arc = lrs_sizey_deg * 3600.0
+
+    # Offsets and ACAM mapping params
+    fplane_off = config.getfloat('offsets', 'fplane')
+    acam_offset = config.getfloat('offsets', 'acam')
+    acam_x_origin = config.getfloat('General', 'acam_x_origin')
+    acam_y_origin = config.getfloat('General', 'acam_y_origin')
+    acam_pix_scale = config.getfloat('General', 'acam_pix_scale')
+
+    # Precompute rotations
+    rpa_fplane = numpy.deg2rad(pa + fplane_off)
+    cf, sf = numpy.cos(rpa_fplane), numpy.sin(rpa_fplane)
+
+    if text_ax is None:
+        text = plt.text
+    elif text_ax == 'none':
+        text = None
+    else:
+        text = text_ax.text
+
+    patches = []
+
+    # Select relevant IFUs and labels (ordered to match expected IDs)
+    lrs_ifus = [(id_, cen) for id_, cen in zip(ifu_ids, ifu_centers_deg)
+                if id_ in ['056', '066', '600', '603']]
+    labels = ['LRS2B', 'LRS2R', 'HPFACAM', 'HPFSCI']
+
+    # Tangent plane at shuffle center for IFU->sky conversion
+    tp = TP(ra0, dec0, pa + fplane_off, 1.0, 1.0)
+
+    for (ifu, cen_deg), lab in zip(lrs_ifus, labels):
+        # IFU center in degrees relative to shuffle center, convert via TP to RA/Dec
+        x_ifu_deg = float(cen_deg[0])
+        y_ifu_deg = float(cen_deg[1])
+        # Follow existing convention used in do_shuffle_target: negative arcsec
+        ra_c, dec_c = tp.xy2raDec(-3600.0 * x_ifu_deg, -3600.0 * y_ifu_deg)
+
+        # Map center sky position to ACAM pixels
+        cx_pix, cy_pix = _sky_to_acam(ra_c, dec_c, ra0, dec0, pa, acam_offset,
+                                      acam_pix_scale, acam_x_origin, acam_y_origin)
+
+        # Build rectangle around center in IFU frame, then rotate to EN
+        if 'LRS2' in lab:
+            hx, hy = 0.5 * lrs_sizex_arc, 0.5 * lrs_sizey_arc
+            rect_offsets = numpy.array([[-hx, -hy], [hx, -hy], [hx, hy], [-hx, hy]])
+        elif 'HPFACAM' in lab:
+            # 15" square
+            hx = hy = 7.5
+            rect_offsets = numpy.array([[-hx, -hy], [hx, -hy], [hx, hy], [-hx, hy]])
+        else:
+            rect_offsets = None
+
+        if rect_offsets is not None:
+            # Rotate offsets by (pa + fplane) in EN plane
+            xr = cf * rect_offsets[:, 0] - sf * rect_offsets[:, 1]
+            yr = sf * rect_offsets[:, 0] + cf * rect_offsets[:, 1]
+            # Convert each EN offset (arcsec) relative to IFU center into ACAM pixels
+            # by mapping EN->ACAM and translating by the center pixel
+            en_to_acam = _en_arcsec_to_acam(
+                numpy.column_stack([xr, yr]), -pa, -acam_offset,
+                acam_pix_scale, 0.0, 0.0  # temporary origin at (0,0)
+            )
+            poly_pix = en_to_acam + numpy.array([cx_pix, cy_pix])
+            patches.append(Polygon(poly_pix, closed=True))
+        else:
+            patches.append(Circle((cx_pix, cy_pix), 5.0))
+
+        # Label at center
+        log.debug("%s center RA/Dec=(%.6f, %.6f) -> ACAM(%.1f, %.1f)", lab, ra_c, dec_c, cx_pix, cy_pix)
+        if text:
+            text(cx_pix, cy_pix, lab, ha="center", va="center", family='sans-serif', size=7, color=color, rotation=text_rot)
+
+    return PatchCollection(patches, edgecolor=color, facecolor='none', linewidth=linewidth)
+
+
+def visualize_acam_clean(
+    ra_shuffle,
+    dec_shuffle,
+    pa,
+    im_hdul,
+    candidate_stars,
+    ifu_centers,
+    ifu_ids,
+    config,
+    outfile,
+):
+    """
+    Parameters
+    ----------
+    im_hdul : FITS HDUList
+        Downloaded HiPS image with valid celestial WCS.
+    candidate_stars : iterable
+        Each entry should provide at least (ra, dec, label).
+    ifu_centers : iterable
+        Tangent-plane IFU centers in degrees (east, north) relative to shuffle center.
+    ifu_ids : iterable
+        IFU IDs matching ifu_centers.
+    """
+
+    acam_offset = config.getfloat("offsets", "acam")
+    acam_x_origin = config.getfloat("General", "acam_x_origin")
+    acam_y_origin = config.getfloat("General", "acam_y_origin")
+    acam_pix_scale = config.getfloat("General", "acam_pix_scale")
+    acam_x_length = config.getint("General", "acam_x_length")
+    acam_y_length = config.getint("General", "acam_y_length")
+
+    # 1) Build ACAM-native output WCS
+    w_out = _build_acam_wcs(
+        ra_shuffle, dec_shuffle, pa, acam_offset,
+        acam_x_origin, acam_y_origin,
+        acam_pix_scale, acam_x_length, acam_y_length
+    )
+
+    # 2) Reproject downloaded image onto ACAM grid
+    acam_image, footprint = reproject_interp(
+        im_hdul,
+        w_out,
+        shape_out=(acam_y_length, acam_x_length),
+        return_footprint=True,
+        order="bilinear",
+    )
+
+    # Optional: mask places with no input coverage
+    acam_image = numpy.array(acam_image, dtype=float)
+    acam_image[footprint <= 0] = numpy.nan
+
+    # Work with finite values only for stats
+    finite = numpy.isfinite(acam_image)
+    vals = acam_image[finite]
+    bkg = biweight_location(vals)
+    try:
+        var = biweight_midvariance(vals)
+        sigma = numpy.sqrt(var) if numpy.isfinite(var) else mad_std(vals)
+    except Exception:
+        sigma = mad_std(vals)
+    vmin = bkg - 1.0 * sigma
+    # Upper bound around 99.7 percentile (between 99.5 and 99.8)
+    p = PercentileInterval(99.9)
+    vmin_p, vmax = p.get_limits(vals)
+    # Ensure sensible ordering
+    if not numpy.isfinite(vmax):
+        vmax = numpy.nanmax(vals)
+    if not numpy.isfinite(vmin):
+        vmin = vmin_p
+    if vmin >= vmax:
+        vmin = numpy.nanmin(vals)
+    norm = ImageNormalize(vmin=vmin, vmax=vmax, stretch=AsinhStretch(a=0.05))
+
+    # 4) Plot directly in ACAM coordinates
+    dpi = 150
+    fig = plt.figure(figsize=(acam_x_length / dpi, acam_y_length / dpi), dpi=dpi, frameon=False)
+    ax = fig.add_axes([0, 0, 1, 1], frameon=False)
+    ax.axis("off")
+    ax.imshow(acam_image, origin="lower", cmap="gray", norm=norm)
+
+    # Add a small pixel buffer around the ACAM to avoid cutting off labels near edges
+    pad = max(10, int(0.02 * min(acam_x_length, acam_y_length)))
+    ax.set_xlim(-pad, acam_x_length - 1 + pad)
+    ax.set_ylim(-pad, acam_y_length - 1 + pad)
+
+    # Draw a border showing the true ACAM footprint for visual reference
+    ax.add_patch(Rectangle((0, 0), acam_x_length, acam_y_length,
+                           ec="white", fc="none", lw=0.8, zorder=5))
+
+    # shuffle center
+    ax.add_patch(Circle((acam_x_origin, acam_y_origin), 8, ec="red", fc="none", lw=0.7))
+
+    # cardinal directions
+    _draw_cardinal_directions(ax, acam_x_origin, acam_y_origin, pa, acam_offset, length=70)
+
+    # candidate stars
+    # Accumulate CSV rows: RA, Dec, acam_x, acam_y, img_x, img_y, g, r, i
+    csv_rows = []
+    for star in candidate_stars:
+        ra_star, dec_star, label = star[:3]
+        # Optional g, r, i provided as 4th-6th elements
+        gmag = rmag = imag = numpy.nan
+        if len(star) >= 6:
+            try:
+                gmag = float(star[3])
+                rmag = float(star[4])
+                imag = float(star[5])
+            except Exception:
+                gmag = rmag = imag = numpy.nan
+        x_acam, y_acam = _sky_to_acam(
+            ra_star, dec_star,
+            ra_shuffle, dec_shuffle,
+            pa, acam_offset,
+            acam_pix_scale, acam_x_origin, acam_y_origin
+        )
+
+        if (0 <= x_acam < acam_x_length) and (0 <= y_acam < acam_y_length):
+            ax.add_patch(Circle((x_acam, y_acam), 10, ec="magenta", fc="none", lw=0.8))
+            ax.text(
+                x_acam, y_acam + 12,
+                f"({x_acam:.1f}, {y_acam:.1f})",
+                color="magenta", fontsize=7, ha="center", va="bottom",
+                clip_on=False, zorder=10
+            )
+            # For the clean schema, img_x/img_y are the same as acam_x/acam_y
+            csv_rows.append((ra_star, dec_star, x_acam, y_acam, x_acam, y_acam, gmag, rmag, imag))
+
+    # LRS2 / HPF overlays in ACAM coordinates (ifu_centers are in degrees)
+    ax.add_collection(
+        plotFocalPlaneLRS_acam(
+            pa,
+            ra_shuffle,
+            dec_shuffle,
+            ifu_centers,
+            ifu_ids,
+            config,
+            color='lime',
+            linewidth=0.8,
+            text_ax=ax,
+            text_rot=None,
+        )
+    )
+
+    # Write CSV next to the image output, matching legacy header but with img_x/img_y = acam_x/acam_y
+    try:
+        csv_path = op.splitext(outfile)[0] + ".csv"
+        with open(csv_path, "w") as f:
+            f.write("#RA, Dec, acam_x, acam_y, img_x, img_y, g, r, i\n")
+            for ra_s, dec_s, ax_s, ay_s, ix_s, iy_s, g_s, r_s, i_s in csv_rows:
+                f.write(
+                    "{:10.6f}, {:11.6f}, {:7.2f}, {:7.2f}, {:7.2f}, {:7.2f}, {:7.2f}, {:7.2f}, {:7.2f}\n".format(
+                        ra_s, dec_s, ax_s, ay_s, ix_s, iy_s, g_s, r_s, i_s
+                    )
+                )
+    except Exception:
+        # Be robust: CSV creation should not break visualization
+        pass
+
+    fig.savefig(outfile, dpi=dpi)
+    plt.close(fig)

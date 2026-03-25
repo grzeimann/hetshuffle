@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hetdex-shuffle"
+version = "0.3.5"
+description = "The shuffle code"
+readme = {file = "README.txt", content-type = "text/plain"}
+license = {file = "LICENSE"}
+authors = [
+  { name = "HETDEX collaboration" },
+]
+requires-python = ">=3.8"
+keywords = ["astronomy", "HETDEX", "shuffle"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: GNU General Public License (GPL)",
+  "Operating System :: Unix",
+  "Topic :: Scientific/Engineering :: Astronomy",
+]
+
+# Runtime dependencies (mirrors setup.py install_requires)
+dependencies = [
+  "numpy",
+  "scipy",
+  "astropy",
+  "astroquery",
+  "matplotlib",
+  "pyds9",
+  "pyhetdex",
+  "six",
+]
+
+[project.optional-dependencies]
+# Mirrors setup.py extras_require
+oracle = ["cx_Oracle"]
+
+[project.scripts]
+# Mirrors setup.py entry_points
+"do_shuffle" = "hetdex_shuffle.do_shuffle_target:main"
+"shuffle_config" = "hetdex_shuffle.copy_config:main"
+"shuffle_distances" = "hetdex_shuffle.obj_dist_ifu_vis:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["hetdex_shuffle*"]

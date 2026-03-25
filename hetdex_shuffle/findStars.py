@@ -487,14 +487,29 @@ def ps1_cone_table(
     radius_deg=9.0/60.0,
     table="stack",
     release="dr2",
-    columns=["objID", "raMean", "decMean",
-            "gApMag", "rApMag", "iApMag", "zApMag", "yApMag",],
+    columns=[
+        # Core identifiers/positions
+        "objID", "raMean", "decMean",
+        # Aperture mags kept for backward compatibility with callers
+        "gApMag", "rApMag", "iApMag", "zApMag", "yApMag",
+        # PSF mags + Kron mag used for star/galaxy and quality selection
+        "gPSFMag", "rPSFMag", "iPSFMag", "zPSFMag", "yPSFMag",
+        "rKronMag",
+        # Quality factors and detection flags (naming per PS1 DR2 API)
+        "gQfPerfect", "rQfPerfect", "iQfPerfect", "primaryDetection",
+    ],
     baseurl="https://catalogs.mast.stsci.edu/api/v0.1/panstarrs",
     **kw,
 ):
     """
     Cone search PS1 and return an astropy Table.
-    Uses CSV output (per STScI example) and is quite robust.
+    Also applies the same selection used in get_panstarrs_data from the local DB:
+      - primaryDetection > 0
+      - (rPSFMag - rKronMag) < 0.05
+      - g/r/i quality factors > 0.85
+      - gPSFMag, rPSFMag, iPSFMag > 0
+    Column names follow PS1 DR2 API; function tolerates missing columns by
+    skipping the corresponding cut.
     """
     params = dict(ra=ra, dec=dec, radius=radius_deg, **kw)
 
@@ -513,12 +528,66 @@ def ps1_cone_table(
 
     tab = ascii.read(text)
 
-    # Optional: turn PS1 sentinel -999.0 into NaN for magnitudes
+    # Convert PS1 sentinel -999 or <=0 placeholders to NaN for numeric columns
     for col in tab.colnames:
         if tab[col].dtype.kind in "fi":
-            mask = tab[col] <= -999.0
-            if numpy.any(mask):
-                tab[col][mask] = numpy.nan
+            bad = (tab[col] <= -999.0)
+            if numpy.any(bad):
+                tab[col][bad] = numpy.nan
+
+    # Apply selection mirroring get_panstarrs_data (as possible with available cols)
+    def has_cols(names):
+        return all(n in tab.colnames for n in names)
+
+    # Build a boolean mask initialized to all True
+    if len(tab) == 0:
+        return tab
+    sel = numpy.ones(len(tab), dtype=bool)
+
+    # primaryDetection > 0
+    if "primaryDetection" in tab.colnames:
+        vals = tab["primaryDetection"]
+        try:
+            sel &= numpy.array(vals) > 0
+        except Exception:
+            # If column is masked or not numeric, skip
+            pass
+
+    # g/r/i PSF mags > 0
+    for band in ("g", "r", "i"):
+        col = f"{band}PSFMag"
+        if col in tab.colnames:
+            try:
+                sel &= numpy.array(tab[col]) > 0
+            except Exception:
+                pass
+        # Tolerate alternative naming used in local DB comments (gpsfQfPerfect etc.)
+
+    # (rPSFMag - rKronMag) < 0.05
+    if has_cols(["rPSFMag", "rKronMag"]):
+        try:
+            diff = numpy.array(tab["rPSFMag"]) - numpy.array(tab["rKronMag"])
+            sel &= diff < 0.05
+        except Exception:
+            pass
+
+    # Quality factors > 0.85 (use PS1 DR2 names gQfPerfect etc.)
+    for band in ("g", "r", "i"):
+        qcol_api = f"{band}QfPerfect"
+        qcol_local = f"{band}psfQfPerfect"  # local DB variant (e.g., gpsfQfPerfect)
+        if qcol_api in tab.colnames:
+            try:
+                sel &= numpy.array(tab[qcol_api]) > 0.85
+            except Exception:
+                pass
+        elif qcol_local in tab.colnames:
+            try:
+                sel &= numpy.array(tab[qcol_local]) > 0.85
+            except Exception:
+                pass
+
+    # Finally, filter the table
+    tab = tab[sel]
 
     return tab
 
@@ -1200,7 +1269,7 @@ def fastfindStarCand(oo, config, kind, forcemagmax=0.0):
     # SDSSDR9 has ugriz 5 magnitudes, while USNOA2 have only B,R magnitudes
     ii = numpy.ones((len(ss),), dtype=bool)
     for i in numpy.arange(4, 9):
-        if ss[:, i].all() != 0:
+        if numpy.any(ss[:, i] != 0):
             ii *= (ss[:, i] >= magmin[i-4]) * (ss[:, i] <= magmax[i-4])
     return ss[ii]
 

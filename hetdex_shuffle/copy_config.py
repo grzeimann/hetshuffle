@@ -9,15 +9,9 @@ import io
 import os
 import textwrap as tw
 
-import pkg_resources
-import six
+from importlib import resources as importlib_resources
 
 from . import __full_version__
-
-try:  # python 3 doesn't have raw_input
-    input = raw_input
-except NameError:
-    pass
 
 COPY_FILES = ['fplane.txt', 'shuffle.cfg']
 
@@ -71,13 +65,6 @@ def parse(argv=None):
     return args
 
 
-def _str_to_unicode(str_):
-    '''In python 2 convert the input string to unicode, otherwise returns the
-    input'''
-    if six.PY2 and isinstance(str_, six.string_types):
-        return unicode(str_)
-    else:
-        return str_
 
 
 def copy(args):
@@ -104,10 +91,10 @@ def copy(args):
             if not overwrite:
                 non_written_files.append(cf)
                 continue
-        ifile = pkg_resources.resource_string(__name__,
-                                              os.path.join('configs', cf))
-        with io.open(ofile, 'w', newline=None) as of:
-            of.write(_str_to_unicode(ifile))
+        # Read the config file from package data using importlib.resources
+        ifile = importlib_resources.files('hetdex_shuffle').joinpath('configs', cf).read_text(encoding='utf-8')
+        with io.open(ofile, 'w', encoding='utf-8', newline=None) as of:
+            of.write(ifile)
         written_files.append(cf)
 
     if written_files:

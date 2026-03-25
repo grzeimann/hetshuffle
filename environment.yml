@@ -1,0 +1,25 @@
+name: hetshuffle
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - numpy
+  - scipy
+  - astropy
+  - astroquery
+  - matplotlib
+  - pip
+  - pip:
+      # pyhetdex is hosted on a custom index per README; attempt pip install.
+      # If you have access credentials or need a specific index URL, edit below.
+      - pyhetdex
+      # pyds9 and ds9 may require X11; install via conda-forge if needed:
+      # - pyds9
+      
+# Notes:
+# - If pyhetdex requires an extra index, you can use pip's --extra-index-url by
+#   creating a requirements file or installing manually:
+#   pip install --extra-index-url https://gate.mpe.mpg.de/pypi pyhetdex
+# - For optional Oracle support, install cx_Oracle:
+#   conda install -c conda-forge cx_oracle
