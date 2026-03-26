@@ -9,6 +9,7 @@ dependencies:
   - astropy
   - astroquery
   - matplotlib
+  - reproject
   - pip
   - pip:
       # pyhetdex is hosted on a custom index per README; attempt pip install.

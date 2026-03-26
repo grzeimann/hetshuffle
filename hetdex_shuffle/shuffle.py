@@ -959,7 +959,7 @@ def load_data(args):
     return data
 
 
-def precache(args, data, start=1, stop=numpy.Inf):
+def precache(args, data, start=1, stop=numpy.inf):
     """Downloads objects without actually doing the shuffling.
 
     Parameters
@@ -1088,7 +1088,7 @@ def load_fplane_file(config):
     return ifu_centers / 3600., ifu_ihmpid, ifu_ids
 
 
-def do(args, data, radius=None, start=1, stop=numpy.Inf, orig_loc=None,
+def do(args, data, radius=None, start=1, stop=numpy.inf, orig_loc=None,
        targetID=None):
     """
     Main procedure. Loops over all shots and performs shuffling for them.
@@ -1113,7 +1113,7 @@ def do(args, data, radius=None, start=1, stop=numpy.Inf, orig_loc=None,
 
     if config.getboolean("General", "cache_only"):
         log.info('Pre-caching only, no actual shuffling...')
-        precache(args, data, start=1, stop=numpy.Inf)
+        precache(args, data, start=1, stop=numpy.inf)
 
     result = []
 

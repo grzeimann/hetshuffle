@@ -29,6 +29,7 @@ dependencies = [
   "astropy",
   "astroquery",
   "matplotlib",
+  "reproject",
   "pyds9",
   "pyhetdex",
   "six",
