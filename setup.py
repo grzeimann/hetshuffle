@@ -7,8 +7,8 @@ except ImportError:
 
 from setuptools import setup, find_packages
 
-install_requires = ['numpy', 'scipy', 'astropy', 'astroquery', 'matplotlib',
-                    'pyds9', 'pyhetdex', 'six']
+install_requires = ['numpy<2', 'scipy', 'astropy', 'astroquery', 'matplotlib',
+                    'pyds9', 'psycopg2-binary', 'six']
 
 extras_require = {'oracle': ['cx_Oracle', ]}
 

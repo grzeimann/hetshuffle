@@ -33,7 +33,7 @@ import sys
 import textwrap as tw
 import warnings
 import datetime
-from pyhetdex.coordinates.tangent_projection import TangentPlane as TP
+from .astrometry import TangentPlane as TP
 from astropy.coordinates import SkyCoord
 import astropy.units as u
 from astropy.time import Time

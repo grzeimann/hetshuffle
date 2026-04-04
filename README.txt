@@ -107,6 +107,71 @@ whether to create plots or open DS9 for visualisation, e.g.:
   Those files will not be overwritten but appended to if they are already in place.
 * [General]visualize: plot the shuffle result on SDSS or DSS image.
 
+ACAM imaging fail-safe and sentinel
+---------------------------------------
+When external imaging services (SDSS/DSS/PS1) fail or return an unusable payload during ACAM visualization, Shuffle now:
+- Falls back to alternative providers when possible, or uses a blank placeholder image.
+- Writes a small sentinel file next to the output image with suffix `.image-missing` explaining the failure reason.
+
+This sentinel can be used by external scripts to detect and re-run targets whose images could not be retrieved at the time of execution.
+
+SDSS imaging backend selection
+---------------------------------------
+Shuffle can retrieve SDSS images using multiple backends controlled by the `sdss_backend` option in `shuffle.cfg` under the `[General]` section:
+- `astroquery` (default): uses `astroquery.sdss` to retrieve an image near the requested RA/Dec.
+- `legacy`: uses the older DR9 JPEG cutout endpoint (may be unstable or obsolete).
+- `sciserver`: placeholder for future SciServer integration (not implemented).
+
+Example in shuffle.cfg:
+
+    [General]
+    sdss_backend = astroquery
+
+If a backend fails or returns an invalid image, Shuffle will fall back to SkyView or PS1 per the existing logic and may write the `.image-missing` sentinel next to the output visualization.
+
+Primary imaging source and retrieval method
+---------------------------------------
+Shuffle now retrieves finder images using the CDS HiPS service (hips2fits). The function `retrieve_image` calls `retrieve_image_hips`, which queries:
+- CDS/P/PanSTARRS/DR1/g
+- CDS/P/DSS2/blue
+- CDS/P/SDSS9/g
+in that order by default, returning the first valid FITS cutout with WCS.
+
+Configuration in shuffle.cfg under [General]:
+
+    # HiPS (hips2fits) imaging retrieval
+    hips_surveys = CDS/P/PanSTARRS/DR1/g, CDS/P/DSS2/blue, CDS/P/SDSS9/g
+    hips_timeout = 20
+    hips_width = 800
+    hips_height = 800
+
+The returned tuple remains compatible with previous code paths: (imarray, CD, url, img_src), where img_src is the HiPS survey identifier. If HiPS retrieval fails for all configured surveys, a placeholder image is returned and normal fail-safe behavior applies.
+
+PS1 retrieval API note
+---------------------------------------
+The legacy helpers `retrieve_image_PS1` and `retrieve_image_PANSTARRS` are now deprecated and internally delegate to the unified `retrieve_image_ps1` implementation. Please use `retrieve_image_ps1` directly in new code to avoid confusion.
+
+Relevant configuration in shuffle.cfg:
+
+    [General]
+    # Attempt SDSS retrieval after DSS fallback
+    attempt_sdss_after_dss = true
+
+    # PS1 retrieval controls (aligned with ps1bulk example)
+    ps1_type = stack            # default image type if ps1_imagetypes not set
+    ps1_filters = irzg          # filter preference order used to build cutout URLs
+    ps1_imagetypes =            # optional comma-separated list passed to ps1filenames; if empty, ps1_type applies
+    ps1_timeout = 20            # HTTP timeout (seconds) for PS1 fitscut requests
+
+    # SkyView (DSS) retrieval controls
+    skyview_timeout = 20       # per-request timeout in seconds
+    skyview_retries = 2        # number of retry attempts on failure
+    skyview_retry_delay = 2.0  # seconds to wait between retries
+
+PS1 service etiquette
+---------------------------------------
+Please avoid more than 10 simultaneous threads when downloading PS1 images. The ps1images service is shared; excessive request rates may result in your downloads being throttled or blocked.
+
 If you want to skip the shuffling and just search for guide and wavefront
 sensor stars, set the ``radius`` command line argument to ``0``
 

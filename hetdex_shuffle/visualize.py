@@ -28,7 +28,7 @@ import six
 from six.moves import configparser
 import re
 from distutils.dir_util import mkpath
-from pyhetdex.coordinates.tangent_projection import TangentPlane as TP
+from .astrometry import TangentPlane as TP
 import os.path as op
 
 try:

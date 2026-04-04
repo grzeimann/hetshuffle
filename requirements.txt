@@ -1,10 +1,10 @@
 # mandatory requirements to run shuffle
-numpy
+numpy<2
 scipy
 astropy
 astroquery
 matplotlib
-pyhetdex --extra-index-url https://gate.mpe.mpg.de/pypi
+psycopg2-binary
 six
 
 # optional requirements for shuffle. Uncomment the following lines to install

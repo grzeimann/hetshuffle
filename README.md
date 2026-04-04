@@ -26,15 +26,11 @@ Option A: pip (system/virtualenv)
   - pip install .
   - Optional Oracle DB support: pip install .[oracle]
 - Notes about dependencies
-  - pyhetdex is listed as a normal dependency. If your site requires a custom index, install it with:
-    - pip install --extra-index-url https://gate.mpe.mpg.de/pypi pyhetdex
   - pyds9 and ds9 require X11 if you intend to use DS9 visualization.
 
 Option B: Conda environment
 - conda env create -f environment.yml
 - conda activate hetshuffle
-- If pyhetdex is not found, install via pip with the extra index as needed:
-  - pip install --extra-index-url https://gate.mpe.mpg.de/pypi pyhetdex
 
 
 Configuration files you will need
@@ -111,4 +107,4 @@ Where things live
 
 Acknowledgements and license
 - HETDEX collaboration; see LICENSE for terms.
-- Portions rely on Astropy, Astroquery, Matplotlib, NumPy, and pyhetdex.
+- Portions rely on Astropy, Astroquery, Matplotlib, and NumPy.

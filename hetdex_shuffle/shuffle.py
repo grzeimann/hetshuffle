@@ -12,7 +12,10 @@ import time
 
 import numpy
 
-import pyhetdex.het.fplane as fplane_parser
+# Local replacement for pyhetdex fplane parser
+from . import astrometry as _astrometry
+class fplane_parser:
+    FPlane = _astrometry.FPlane
 
 from . import parang, visualize
 from .handle_local_catalogue import LocalCatalogue
