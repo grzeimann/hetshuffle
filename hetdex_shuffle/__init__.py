@@ -5,7 +5,7 @@ from importlib.metadata import version
 
 __version__ = version('hetdex-shuffle')
 
-__svn_revision__ = '$Revision: 228 $'
+__svn_revision__ = '$Revision: 229 $'
 
 __full_version__ = '''Shuffle version: {}.
 Svn revision: {}'''.format(__version__, __svn_revision__)

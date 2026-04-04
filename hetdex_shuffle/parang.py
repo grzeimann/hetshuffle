@@ -13,6 +13,10 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import numpy
+from astropy.coordinates import SkyCoord, PrecessedGeocentric
+from astropy.time import Time
+import astropy.units as u
+from datetime import datetime as dt
 
 # Begin HET constants from POINT's HET.h, dated 09APR12
 
@@ -29,7 +33,12 @@ TDE_S = numpy.arcsin(-P + Q)
 # End HET constants from POINT's HET.h
 
 
-def parang(app_dec, az_input=None, verbose=False):
+def parang(cmd_dec, az_input=None, verbose=False):
+
+    t = Time(dt.now())
+    cc = SkyCoord(0*u.deg, cmd_dec*u.deg, equinox=t,
+                  frame='icrs')
+    app_dec = float(cc.transform_to(PrecessedGeocentric(equinox=t)).dec.deg)
     if verbose:
         print("Apparent declination: %7.3f deg\n" % (app_dec))
     app_dec /= R2D
