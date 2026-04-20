@@ -33,10 +33,10 @@ TDE_S = numpy.arcsin(-P + Q)
 # End HET constants from POINT's HET.h
 
 
-def parang(cmd_dec, az_input=None, verbose=False):
+def parang(cmd_ra, cmd_dec, az_input=None, verbose=False):
 
     t = Time(dt.now())
-    cc = SkyCoord(0*u.deg, cmd_dec*u.deg, equinox=t,
+    cc = SkyCoord(cmd_ra*u.hour, cmd_dec*u.deg, equinox=t,
                   frame='icrs')
     app_dec = float(cc.transform_to(PrecessedGeocentric(equinox=t)).dec.deg)
     if verbose:
