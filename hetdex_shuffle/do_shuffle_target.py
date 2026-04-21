@@ -607,7 +607,7 @@ def main():
     ifu_ind = ifu_index(ifu_ids, args.ifuslot)
     dec_center = dec*1.
     for i in numpy.arange(4):
-        pas = parang.parang(dec_center, az_input=args.az, verbose=False)
+        pas = parang.parang(ra, dec_center, az_input=args.az, verbose=False)
         if pas[0] == 0:
             log.error("No track is available for DEC=%f.", dec)
             sys.exit(0)
