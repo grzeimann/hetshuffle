@@ -1019,7 +1019,7 @@ def precache(args, data, start=1, stop=numpy.inf):
             log.debug("West Track")
             traj = 'WEST'
 
-        pas = parang.parang(dec, False)
+        pas = parang.parang(ra, dec, False)
         if pas[0] == 0:
             log.error("No track is available for DEC=%f.", dec)
             break
@@ -1220,7 +1220,7 @@ def do(args, data, radius=None, start=1, stop=numpy.inf, orig_loc=None,
             OCDCommands.writeHeader(f_ocdcommands, '%s_%s_%s'
                                     % (targetID, args.ifuslot, tr),
                                     config.get('directories', 'acam_images'))
-            pas = parang.parang(dec, az_input=args.az, verbose=False)
+            pas = parang.parang(ra, dec, az_input=args.az, verbose=False)
             if pas[0] == 0:
                 log.error("No track is available for DEC=%f.", dec)
                 sys.exit(0)
