@@ -1369,6 +1369,14 @@ def do(args, data, radius=None, start=1, stop=numpy.inf, orig_loc=None,
                     image_name = os.path.join(config.get('directories',
                                                          'acam_images'),
                                               image_name)
+                    # Build a single authoritative IFU centroid provider at shuffle center
+                    try:
+                        from .fplane_provider import FPlaneCentroids
+                        ra_shuffle, dec_shuffle = result[-1][0], result[-1][1]
+                        fplane_off = config.getfloat('offsets', 'fplane')
+                        fplane_provider = FPlaneCentroids(ra_shuffle, dec_shuffle, pa, fplane_off, ifu_centers, ifu_ids)
+                    except Exception:
+                        fplane_provider = None
                     acamstar_pos = visualize.visualize_acam([orig_loc[0],
                                                              orig_loc[1], pa],
                                                             result[-1],
@@ -1378,7 +1386,8 @@ def do(args, data, radius=None, start=1, stop=numpy.inf, orig_loc=None,
                                                             acam_star_cand,
                                                             config,
                                                             image_name,
-                                                            targetID)
+                                                            targetID,
+                                                            fplane_provider=fplane_provider)
                 else:
                     acamstar_pos = None
                 HETCommands.writeCommands(f_hetcommands, (ra+dRa)/15.,

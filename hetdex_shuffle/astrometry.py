@@ -429,3 +429,24 @@ class FPlane(object):
         _ifu = self._IFU(ifuslot, x, y, specid, speclot, ifuid, ifurot, platescl)
         self._ifus_by_slot[_ifu.ifuslot] = _ifu
         self.ifus.append(_ifu)
+
+# Proxy to expose FPlaneCentroids via astrometry without circular imports
+class FPlaneCentroids(object):
+    """Lightweight proxy delegating to implementation in fplane_provider.
+
+    Constructing this class delays the import of the implementation until
+    runtime, avoiding circular imports (since the provider needs TangentPlane
+    from this module).
+    """
+    def __init__(self, ra0, dec0, pa, fplane_offset_deg, ifu_centers_deg, ifu_ids):
+        from .fplane_provider import FPlaneCentroids as _Impl
+        self._impl = _Impl(ra0, dec0, pa, fplane_offset_deg, ifu_centers_deg, ifu_ids)
+
+    def sky_centroids_dict(self):
+        return self._impl.sky_centroids_dict()
+
+    def sky_centroid(self, ifu_id):
+        return self._impl.sky_centroid(ifu_id)
+
+    def ids(self):
+        return self._impl.ids()

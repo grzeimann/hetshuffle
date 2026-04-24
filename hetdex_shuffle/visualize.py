@@ -74,8 +74,11 @@ class DS9region(object):
         f.flush()
 
 
-if six.PY2:
-    input = raw_input
+try:
+    # Python 2 compatibility (safe in Py3 as NameError is caught)
+    input = raw_input  # noqa: F821
+except NameError:
+    pass
 
 
 def deg2pix(degree, scale=1.698):
@@ -1092,7 +1095,7 @@ def rotate(angle, size, points, resample=0, expand=0, center=None,
 
 
 def visualize_acam(s, acamloc, ifu_centers, ifu_ids, guideWFSSol,
-                   cal_star_cand, config, filename, targetID):
+                   cal_star_cand, config, filename, targetID, fplane_provider=None):
     """Plot a shuffle solution with matplotlib along side object of interest
     and save image.
 
@@ -1194,6 +1197,9 @@ def visualize_acam(s, acamloc, ifu_centers, ifu_ids, guideWFSSol,
             ifu_ids,
             config,
             filename,
+            target_ra=ra_input,
+            target_dec=dec_input,
+            fplane_provider=fplane_provider,
         )
         return None
     except Exception:
@@ -1610,14 +1616,18 @@ def _build_acam_wcs(ra0, dec0, pa_deg, acam_offset_deg,
     The pixel (acam_x_origin, acam_y_origin) is the shuffle center (ra0, dec0).
     ACAM pixel scale is in arcsec/pixel.
     """
-    theta = numpy.deg2rad(pa_deg + 90.0 + acam_offset_deg)
+    theta = numpy.deg2rad(pa_deg - 90.0 + acam_offset_deg)
     s = acam_pix_scale / 3600.0  # deg / pixel
     c, sn = numpy.cos(theta), numpy.sin(theta)
 
     # Detector x/y to sky east/north, with east left on the sky image
+    # Apply a full-frame Y-axis inversion so increasing pixel Y points toward
+    # detector-bottom (south on the sky). This matches the historical ACAM
+    # orientation where the scene appears vertically flipped (LRS2-R above LRS2-B).
+    # Implemented by negating the second column of the CD matrix.
     cd = numpy.array([
-        [-s * c,  s * sn],
-        [ s * sn,  s * c],
+        [-s * c, -s * sn],
+        [ s * sn, -s * c],
     ])
 
     w = WCS(naxis=2)
@@ -1630,21 +1640,35 @@ def _build_acam_wcs(ra0, dec0, pa_deg, acam_offset_deg,
 
 
 def _sky_to_acam(ra, dec, ra0, dec0, pa_deg, acam_offset_deg,
-                 acam_pix_scale, acam_x_origin, acam_y_origin):
+                 acam_pix_scale, acam_x_origin, acam_y_origin, wcs=None):
     """
     Convert sky coordinates to ACAM x,y in pixels.
+
+    If an ACAM WCS (output grid) is provided via `wcs`, use it directly
+    for the most accurate sky->pixel transform. Otherwise, fall back to
+    the analytic small-angle mapping consistent with _build_acam_wcs.
     """
+    # Prefer authoritative WCS if available
+    if wcs is not None:
+        try:
+            x, y = wcs.wcs_world2pix(float(ra), float(dec), 0)  # origin=0 (pixel coords match imshow)
+            return float(x), float(y)
+        except Exception:
+            # Fall through to analytic mapping on any failure
+            pass
+
     east = (ra - ra0) * numpy.cos(numpy.deg2rad(dec0)) * 3600.0
     north = (dec - dec0) * 3600.0
 
-    theta = numpy.deg2rad(pa_deg + 90.0 + acam_offset_deg)
+    theta = numpy.deg2rad(pa_deg - 90.0 + acam_offset_deg)
     c, s = numpy.cos(theta), numpy.sin(theta)
 
     dx_arc = -c * east + s * north
     dy_arc =  s * east + c * north
 
     x = acam_x_origin + dx_arc / acam_pix_scale
-    y = acam_y_origin + dy_arc / acam_pix_scale
+    # Inverted detector Y: increasing pixel Y goes toward south, so subtract
+    y = acam_y_origin - dy_arc / acam_pix_scale
     return x, y
 
 
@@ -1652,16 +1676,16 @@ def _draw_cardinal_directions(ax, x0, y0, pa_deg, acam_offset_deg, length=60):
     """
     Draw N and E arrows directly in ACAM coordinates.
     """
-    theta = numpy.deg2rad(pa_deg + 90.0 + acam_offset_deg)
+    theta = numpy.deg2rad(pa_deg - 90.0 + acam_offset_deg)
     c, s = numpy.cos(theta), numpy.sin(theta)
 
-    # north in ACAM pixels
+    # north in ACAM pixels (Y is inverted: increasing pixel Y is south)
     nx =  s * length
-    ny =  c * length
+    ny = -c * length
 
-    # east in ACAM pixels
+    # east in ACAM pixels (Y is inverted)
     ex = -c * length
-    ey =  s * length
+    ey = -s * length
 
     ax.plot([x0, x0 + nx], [y0, y0 + ny], "r-", lw=0.6)
     ax.plot([x0, x0 + ex], [y0, y0 + ey], "r-", lw=0.6)
@@ -1688,59 +1712,68 @@ def _arcsec_to_acam_poly(poly_arcsec, acam_pix_scale, acam_x_origin, acam_y_orig
     """
     Convert tangent-plane offsets (arcsec) to ACAM pixel coordinates.
 
-    Applies a rotation by acam_offset (degrees) only — no additional 90° term —
-    before scaling by the ACAM pixel scale and translating by the ACAM origin.
+    Preferred path: if `wcs` and `center_ra/center_dec` are provided, convert
+    each EN offset (arcsec) to absolute RA/Dec around (center_ra, center_dec),
+    transform with the authoritative ACAM WCS via world2pix, and return the
+    pixel coordinates. When the caller intends to add these to the center
+    pixel separately, this function will instead return RELATIVE pixel offsets
+    (vertex_pix - center_pix) so existing call sites that add (cx, cy) still
+    work unchanged.
+
+    Fallback path: if WCS is not provided, apply a rotation by acam_offset
+    (degrees) only — no additional 90° term — then scale by the ACAM pixel
+    scale and translate by the provided ACAM origin.
 
     Parameters
     ----------
     poly_arcsec : (N, 2) array-like
-        Offsets in arcsec, columns are (east, north) relative to shuffle center.
+        Offsets in arcsec, columns are (east, north) relative to shuffle center
+        or IFU center in the EN plane.
     acam_pix_scale : float
         ACAM pixel scale in arcsec/pixel.
     acam_x_origin, acam_y_origin : float
-        ACAM detector pixel coordinates of the shuffle center.
+        ACAM detector pixel coordinates of the shuffle center (used only in
+        the fallback, non-WCS path).
     acam_offset_deg : float
-        Rotation to apply (degrees), consistent with ACAM offset definition.
+        Rotation to apply (degrees), consistent with ACAM offset definition
+        (used only in the fallback, non-WCS path).
+    wcs : astropy.wcs.WCS, optional
+        ACAM output WCS. If provided with center_ra/center_dec, use for the
+        preferred world2pix mapping.
+    center_ra, center_dec : float, optional
+        Sky coordinates of the polygon center, in degrees. Required when wcs
+        is provided.
+
+    Returns
+    -------
+    ndarray of shape (N, 2)
+        If WCS path is used: relative pixel offsets from the center pixel
+        (so you should add the center pixel coordinates externally).
+        If fallback path is used: absolute ACAM pixel coordinates.
     """
+
+
+    # Fallback analytic path (no WCS)
     theta = numpy.deg2rad(acam_offset_deg)
     c, s = numpy.cos(theta), numpy.sin(theta)
-    dx = poly_arcsec[:, 0]
-    dy = poly_arcsec[:, 1]
+    dx = numpy.asarray(poly_arcsec)[:, 0]
+    dy = numpy.asarray(poly_arcsec)[:, 1]
     dx_r = c * dx - s * dy
     dy_r = s * dx + c * dy
     x = acam_x_origin + dx_r / acam_pix_scale
-    y = acam_y_origin + dy_r / acam_pix_scale
+    # Inverted detector Y in fallback as well
+    y = acam_y_origin - dy_r / acam_pix_scale
     return numpy.column_stack([x, y])
 
 
-def _en_arcsec_to_acam(points_arcsec, pa_deg, acam_offset_deg, acam_pix_scale, acam_x_origin, acam_y_origin):
-    """
-    Map an array of (east, north) offsets in arcsec to ACAM pixel coordinates
-    using the ACAM orientation (pa + 90 + acam_offset) and pixel scale.
 
-    points_arcsec: array-like, shape (N, 2)
-    Returns: ndarray (N, 2) of (x, y) pixels in ACAM frame.
-    """
-    pts = numpy.asarray(points_arcsec, dtype=float)
-    if pts.ndim == 1:
-        pts = pts.reshape(1, 2)
-    theta = numpy.deg2rad(pa_deg + 90.0 + acam_offset_deg)
-    c, s = numpy.cos(theta), numpy.sin(theta)
-    east = pts[:, 0]
-    north = pts[:, 1]
-    dx_arc = -c * east + s * north
-    dy_arc =  s * east + c * north
-    x = acam_x_origin + dx_arc / acam_pix_scale
-    y = acam_y_origin + dy_arc / acam_pix_scale
-    return numpy.column_stack([x, y])
-
-
-def plotFocalPlaneLRS_acam(pa, ra0, dec0, ifu_centers_deg, ifu_ids, config, color='lime', linewidth=0.8, text_ax=None, text_rot=None):
+def plotFocalPlaneLRS_acam(pa, ra0, dec0, ifu_centers_deg, ifu_ids, config, color='lime', 
+                           linewidth=0.8, text_ax=None, text_rot=None, wcs=None, fplane_provider=None):
     """
     Plot LRS2/HPF overlays using ACAM pixel coordinates.
 
     - ifu_centers_deg are in degrees (IFU-frame x,y relative to shuffle center).
-    - Convert IFU centers to RA/Dec using pyhetdex TangentPlane, then map to ACAM using the ACAM WCS/orientation.
+    - Convert IFU centers to RA/Dec using astrometry TangentPlane, then map to ACAM using the ACAM WCS/orientation.
 
     Returns a PatchCollection that can be added to axes.
     """
@@ -1772,28 +1805,62 @@ def plotFocalPlaneLRS_acam(pa, ra0, dec0, ifu_centers_deg, ifu_ids, config, colo
 
     patches = []
 
-    # Select relevant IFUs and labels (ordered to match expected IDs)
-    lrs_ifus = [(id_, cen) for id_, cen in zip(ifu_ids, ifu_centers_deg)
-                if id_ in ['056', '066', '600', '603']]
-    labels = ['LRS2B', 'LRS2R', 'HPFACAM', 'HPFSCI']
+    # Normalize IFU IDs to strings and extract a 3-digit core for matching
+    raw_ids = []
+    core_ids = []
+    for id_ in ifu_ids:
+        try:
+            s = str(id_, 'utf-8') if isinstance(id_, (bytes, bytearray)) else str(id_)
+        except Exception:
+            s = str(id_)
+        s = s.strip()
+        raw_ids.append(s)
+        # Extract the last 3 consecutive digits (handles formats like "[056]", "IFU056", etc.)
+        m = re.findall(r"(\d{3})", s)
+        core = m[-1] if m else s
+        core_ids.append(core)
 
-    # Tangent plane at shuffle center for IFU->sky conversion
+    wanted = ['056', '066', '600', '603']
+    # Build list: (raw_id, core_id, center)
+    lrs_ifus = [(rid, cid, cen) for rid, cid, cen in zip(raw_ids, core_ids, ifu_centers_deg)
+                if cid in wanted]
+
+    # If none matched (unexpected formatting), fall back to plotting all IFUs
+    plot_all = False
+    if len(lrs_ifus) == 0:
+        plot_all = True
+        lrs_ifus = list(zip(raw_ids, core_ids, ifu_centers_deg))
+
+    label_map = {'056': 'LRS2B', '066': 'LRS2R', '600': 'HPFACAM', '603': 'HPFSCI'}
+
+    # Tangent plane at shuffle center for IFU->sky conversion (fallback when no provider)
     tp = TP(ra0, dec0, pa + fplane_off, 1.0, 1.0)
 
-    for (ifu, cen_deg), lab in zip(lrs_ifus, labels):
+    for (ifu_raw, ifu_core, cen_deg) in lrs_ifus:
+        lab = label_map.get(ifu_core, ifu_core)
         # IFU center in degrees relative to shuffle center, convert via TP to RA/Dec
         x_ifu_deg = float(cen_deg[0])
         y_ifu_deg = float(cen_deg[1])
-        # Follow existing convention used in do_shuffle_target: negative arcsec
-        ra_c, dec_c = tp.xy2raDec(-3600.0 * x_ifu_deg, -3600.0 * y_ifu_deg)
+        if fplane_provider is not None:
+            # Prefer lookup by core id, then try raw id
+            sky = fplane_provider.sky_centroid(ifu_core)
+            if sky is None:
+                sky = fplane_provider.sky_centroid(ifu_raw)
+            if sky is None:
+                # Fallback to local TP if provider lacks this ID
+                ra_c, dec_c = tp.xy2raDec(3600.0 * x_ifu_deg, 3600.0 * y_ifu_deg)
+            else:
+                ra_c, dec_c = sky
+        else:
+            ra_c, dec_c = tp.xy2raDec(3600.0 * x_ifu_deg, 3600.0 * y_ifu_deg)
 
         # Map center sky position to ACAM pixels
         cx_pix, cy_pix = _sky_to_acam(ra_c, dec_c, ra0, dec0, pa, acam_offset,
-                                      acam_pix_scale, acam_x_origin, acam_y_origin)
+                                      acam_pix_scale, acam_x_origin, acam_y_origin, wcs=wcs)
 
         # Build rectangle around center in IFU frame, then rotate to EN
         if 'LRS2' in lab:
-            hx, hy = 0.5 * lrs_sizex_arc, 0.5 * lrs_sizey_arc
+            hy, hx = 0.5 * lrs_sizex_arc, 0.5 * lrs_sizey_arc
             rect_offsets = numpy.array([[-hx, -hy], [hx, -hy], [hx, hy], [-hx, hy]])
         elif 'HPFACAM' in lab:
             # 15" square
@@ -1803,26 +1870,33 @@ def plotFocalPlaneLRS_acam(pa, ra0, dec0, ifu_centers_deg, ifu_ids, config, colo
             rect_offsets = None
 
         if rect_offsets is not None:
-            # Rotate offsets by (pa + fplane) in EN plane
-            xr = cf * rect_offsets[:, 0] - sf * rect_offsets[:, 1]
-            yr = sf * rect_offsets[:, 0] + cf * rect_offsets[:, 1]
-            # Convert each EN offset (arcsec) relative to IFU center into ACAM pixels
-            # by mapping EN->ACAM and translating by the center pixel
-            en_to_acam = _en_arcsec_to_acam(
-                numpy.column_stack([xr, yr]), -pa, -acam_offset,
-                acam_pix_scale, 0.0, 0.0  # temporary origin at (0,0)
-            )
-            poly_pix = en_to_acam + numpy.array([cx_pix, cy_pix])
+            # Keep rectangles axis-aligned in DETECTOR pixel coordinates.
+            # Build vertices directly in pixels around the center, avoiding any WCS/rotation.
+            hx_pix = (abs(rect_offsets[1,0]) if rect_offsets[1,0] != 0 else abs(rect_offsets[2,0])) / acam_pix_scale
+            hy_pix = (abs(rect_offsets[0,1]) if rect_offsets[0,1] != 0 else abs(rect_offsets[2,1])) / acam_pix_scale
+            poly_pix = numpy.array([
+                [cx_pix - hx_pix, cy_pix - hy_pix],
+                [cx_pix + hx_pix, cy_pix - hy_pix],
+                [cx_pix + hx_pix, cy_pix + hy_pix],
+                [cx_pix - hx_pix, cy_pix + hy_pix],
+            ])
             patches.append(Polygon(poly_pix, closed=True))
-        else:
-            patches.append(Circle((cx_pix, cy_pix), 5.0))
+        # Always add a small center marker so IFU centers are visible even if polygon fails
+        patches.append(Circle((cx_pix, cy_pix), 3.0))
 
         # Label at center
         log.debug("%s center RA/Dec=(%.6f, %.6f) -> ACAM(%.1f, %.1f)", lab, ra_c, dec_c, cx_pix, cy_pix)
         if text:
-            text(cx_pix, cy_pix, lab, ha="center", va="center", family='sans-serif', size=7, color=color, rotation=text_rot)
+            text(cx_pix, cy_pix+30., lab, ha="center", va="center", family='sans-serif', size=7, color=color, rotation=text_rot)
 
-    return PatchCollection(patches, edgecolor=color, facecolor='none', linewidth=linewidth)
+    pc = PatchCollection(patches, facecolor='none', linewidth=linewidth)
+    try:
+        pc.set_edgecolor(color)
+    except Exception:
+        pass
+    pc.set_zorder(20)
+    pc.set_alpha(1.0)
+    return pc
 
 
 def visualize_acam_clean(
@@ -1835,6 +1909,9 @@ def visualize_acam_clean(
     ifu_ids,
     config,
     outfile,
+    target_ra=None,
+    target_dec=None,
+    fplane_provider=None,
 ):
     """
     Parameters
@@ -1920,6 +1997,18 @@ def visualize_acam_clean(
     # cardinal directions
     _draw_cardinal_directions(ax, acam_x_origin, acam_y_origin, pa, acam_offset, length=70)
 
+    # If target RA/Dec provided, mark where it lands on the ACAM image with a star
+    if (target_ra is not None) and (target_dec is not None):
+        tx, ty = _sky_to_acam(
+            float(target_ra), float(target_dec),
+            ra_shuffle, dec_shuffle,
+            pa, acam_offset,
+            acam_pix_scale, acam_x_origin, acam_y_origin,
+            wcs=w_out,
+        )
+        ax.plot(tx, ty, marker='*', color='yellow', markersize=4, markeredgewidth=1.5, zorder=16)
+        ax.text(tx + 8, ty + 8, f"Target ({tx:.1f}, {ty:.1f})", color='yellow', fontsize=8, ha='right', va='bottom', zorder=16)
+
     # candidate stars
     # Accumulate CSV rows: RA, Dec, acam_x, acam_y, img_x, img_y, g, r, i
     csv_rows = []
@@ -1938,7 +2027,8 @@ def visualize_acam_clean(
             ra_star, dec_star,
             ra_shuffle, dec_shuffle,
             pa, acam_offset,
-            acam_pix_scale, acam_x_origin, acam_y_origin
+            acam_pix_scale, acam_x_origin, acam_y_origin,
+            wcs=w_out,
         )
 
         if (0 <= x_acam < acam_x_length) and (0 <= y_acam < acam_y_length):
@@ -1965,6 +2055,8 @@ def visualize_acam_clean(
             linewidth=0.8,
             text_ax=ax,
             text_rot=None,
+            wcs=w_out,
+            fplane_provider=fplane_provider,
         )
     )
 
