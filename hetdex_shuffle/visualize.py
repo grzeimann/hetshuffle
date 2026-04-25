@@ -1963,17 +1963,8 @@ def visualize_acam_clean(
     except Exception:
         sigma = mad_std(vals)
     vmin = bkg - 1.0 * sigma
-    # Upper bound around 99.7 percentile (between 99.5 and 99.8)
-    p = PercentileInterval(99.9)
-    vmin_p, vmax = p.get_limits(vals)
-    # Ensure sensible ordering
-    if not numpy.isfinite(vmax):
-        vmax = numpy.nanmax(vals)
-    if not numpy.isfinite(vmin):
-        vmin = vmin_p
-    if vmin >= vmax:
-        vmin = numpy.nanmin(vals)
-    norm = ImageNormalize(vmin=vmin, vmax=vmax, stretch=AsinhStretch(a=0.05))
+    vmax = bkg + 25.0 * sigma
+    norm = ImageNormalize(vmin=vmin, vmax=vmax, stretch=AsinhStretch(a=0.2))
 
     # 4) Plot directly in ACAM coordinates
     dpi = 150
