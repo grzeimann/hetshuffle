@@ -1933,18 +1933,32 @@ def visualize_acam_clean(
     acam_x_length = config.getint("General", "acam_x_length")
     acam_y_length = config.getint("General", "acam_y_length")
 
-    # 1) Build ACAM-native output WCS
+    # 1) Build ACAM-native output WCS (authoritative for coordinate transforms)
     w_out = _build_acam_wcs(
         ra_shuffle, dec_shuffle, pa, acam_offset,
         acam_x_origin, acam_y_origin,
         acam_pix_scale, acam_x_length, acam_y_length
     )
 
-    # 2) Reproject downloaded image onto ACAM grid
+    # Physically extend the image by a fixed pixel buffer on all sides, without
+    # changing the ACAM x,y logic. We keep w_out for all coordinate work and
+    # build a padded WCS for reprojection/display where crpix is shifted by +pad.
+    pad = 30
+    w_out_pad = WCS(naxis=2)
+    w_out_pad.wcs.ctype = list(w_out.wcs.ctype)
+    w_out_pad.wcs.crval = list(w_out.wcs.crval)
+    w_out_pad.wcs.cd = numpy.array(w_out.wcs.cd, copy=True)
+    w_out_pad.wcs.crpix = [w_out.wcs.crpix[0] + pad, w_out.wcs.crpix[1] + pad]
+    w_out_pad.array_shape = (
+        int(acam_y_length + 2 * pad),
+        int(acam_x_length + 2 * pad),
+    )
+
+    # 2) Reproject downloaded image onto the PADDED ACAM grid
     acam_image, footprint = reproject_interp(
         im_hdul,
-        w_out,
-        shape_out=(acam_y_length, acam_x_length),
+        w_out_pad,
+        shape_out=(acam_y_length + 2 * pad, acam_x_length + 2 * pad),
         return_footprint=True,
         order="bilinear",
     )
@@ -1968,15 +1982,17 @@ def visualize_acam_clean(
 
     # 4) Plot directly in ACAM coordinates
     dpi = 150
-    fig = plt.figure(figsize=(acam_x_length / dpi, acam_y_length / dpi), dpi=dpi, frameon=False)
+    fig = plt.figure(figsize=((acam_x_length + 2 * pad) / dpi, (acam_y_length + 2 * pad) / dpi), dpi=dpi, frameon=False)
     ax = fig.add_axes([0, 0, 1, 1], frameon=False)
     ax.axis("off")
-    ax.imshow(acam_image, origin="lower", cmap="gray", norm=norm)
-
-    # Add a small pixel buffer around the ACAM to avoid cutting off labels near edges
-    pad = max(10, int(0.02 * min(acam_x_length, acam_y_length)))
-    ax.set_xlim(-pad, acam_x_length - 1 + pad)
-    ax.set_ylim(-pad, acam_y_length - 1 + pad)
+    # Display the padded image, but keep the ACAM pixel coordinate system for overlays via extent
+    ax.imshow(
+        acam_image,
+        origin="lower",
+        cmap="gray",
+        norm=norm,
+        extent=[-pad, acam_x_length - 1 + pad, -pad, acam_y_length - 1 + pad],
+    )
 
     # Draw a border showing the true ACAM footprint for visual reference
     ax.add_patch(Rectangle((0, 0), acam_x_length, acam_y_length,
