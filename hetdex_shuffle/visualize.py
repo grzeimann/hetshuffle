@@ -1202,7 +1202,8 @@ def visualize_acam(s, acamloc, ifu_centers, ifu_ids, guideWFSSol,
             fplane_provider=fplane_provider,
         )
         return None
-    except Exception:
+    except Exception as e:
+        log.error("Error in ACAM visualization: %s", e)
         # Fall back to legacy plotting below if anything goes wrong
         pass
 
@@ -1578,31 +1579,45 @@ def retrieve_image_hips(ra, dec, fov_deg, yflip=True, scale=1.5):
     if yflip:
         cd22 *= -1.0
 
+    log = logging.getLogger('shuffle')
+
     for survey in surveys:
-        params = {
-            "hips": survey,
-            "ra": ra,
-            "dec": dec,
-            "fov": fov_deg,
-            "width": width,
-            "height": height,
-            "format": "fits",
-            "projection": "TAN",
-        }
-        r = requests.get(url, params=params, timeout=20)
-        r.raise_for_status()
+        try:
+            continue
+            params = {
+                "hips": survey,
+                "ra": ra,
+                "dec": dec,
+                "fov": fov_deg,
+                "width": width,
+                "height": height,
+                "format": "fits",
+                "projection": "TAN",
+            }
+            r = requests.get(url, params=params, timeout=20)
+            r.raise_for_status()
 
-        hdul = fits.open(BytesIO(r.content))
-        imarray = hdul[0].data
+            with fits.open(BytesIO(r.content)) as hdul:
+                imarray = hdul[0].data
 
-        if imarray is not None and min(imarray.shape[-2:]) > 32:
+            # Require a minimally useful image size
+            if imarray is None or min(imarray.shape[-2:]) <= 32:
+                raise ValueError("HIPS image is empty or too small")
+
             if yflip:
                 imarray = imarray[::-1]
 
             CD = numpy.matrix([[cd11, 0.0],
-                           [0.0,  cd22]])
+                               [0.0,  cd22]])
 
             return imarray, CD, r.url, survey
+        except Exception as e:
+            # Try the next survey on any retrieval/parsing error
+            try:
+                log.warning("HIPS retrieval failed for survey %s: %s", survey, str(e))
+            except Exception:
+                pass
+            continue
     return return_blank_image(width, scale)
 
 
@@ -1970,14 +1985,26 @@ def visualize_acam_clean(
     # Work with finite values only for stats
     finite = numpy.isfinite(acam_image)
     vals = acam_image[finite]
-    bkg = biweight_location(vals)
-    try:
-        var = biweight_midvariance(vals)
-        sigma = numpy.sqrt(var) if numpy.isfinite(var) else mad_std(vals)
-    except Exception:
-        sigma = mad_std(vals)
+    if vals.size == 0:
+        # No data at all: render a solid black image with a safe norm
+        bkg = 0.0
+        sigma = 1.0
+    else:
+        try:
+            bkg = biweight_location(vals)
+        except Exception:
+            bkg = numpy.nanmean(vals) if vals.size else 0.0
+        try:
+            var = biweight_midvariance(vals)
+            sigma = numpy.sqrt(var) if numpy.isfinite(var) else mad_std(vals)
+        except Exception:
+            sigma = mad_std(vals)
+        if not numpy.isfinite(sigma) or sigma <= 0:
+            sigma = 1.0
     vmin = bkg - 1.0 * sigma
     vmax = bkg + 25.0 * sigma
+    if (not numpy.isfinite(vmin)) or (not numpy.isfinite(vmax)) or (vmax <= vmin):
+        vmin, vmax = 0.0, 1.0
     norm = ImageNormalize(vmin=vmin, vmax=vmax, stretch=AsinhStretch(a=0.2))
 
     # 4) Plot directly in ACAM coordinates
@@ -1986,17 +2013,34 @@ def visualize_acam_clean(
     ax = fig.add_axes([0, 0, 1, 1], frameon=False)
     ax.axis("off")
     # Display the padded image, but keep the ACAM pixel coordinate system for overlays via extent
+    # Ensure blank/no-coverage pixels (NaN) render as solid black, not transparent white
+    try:
+        cmap = matplotlib.cm.get_cmap('gray').copy()
+    except Exception:
+        cmap = matplotlib.cm.get_cmap('gray')
+    try:
+        cmap.set_bad(color='black', alpha=1.0)
+        cmap.set_under(color='black', alpha=1.0)
+    except Exception:
+        pass
+    # Also set the axes/figure background to black so fully-transparent tiles still appear black
+    try:
+        ax.set_facecolor('black')
+        fig.patch.set_facecolor('black')
+    except Exception:
+        pass
     ax.imshow(
         acam_image,
         origin="lower",
-        cmap="gray",
+        cmap=cmap,
         norm=norm,
         extent=[-pad, acam_x_length - 1 + pad, -pad, acam_y_length - 1 + pad],
     )
 
+    log = logging.getLogger('shuffle')
     # Draw a border showing the true ACAM footprint for visual reference
     ax.add_patch(Rectangle((0, 0), acam_x_length, acam_y_length,
-                           ec="white", fc="none", lw=0.8, zorder=5))
+                           ec="salmon", fc="none", lw=0.8, zorder=5))
 
     # shuffle center
     ax.add_patch(Circle((acam_x_origin, acam_y_origin), 8, ec="red", fc="none", lw=0.7))
