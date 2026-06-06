@@ -20,7 +20,11 @@ class fplane_parser:
 from . import parang, visualize
 from .handle_local_catalogue import LocalCatalogue
 from . import findStars
-from distutils.dir_util import mkpath
+# distutils is deprecated/removed; provide a local mkpath replacement
+import os as _os
+
+def mkpath(path):
+    _os.makedirs(path, exist_ok=True)
 
 
 failure_code_dict = {-1: "Insufficient number of calibration stars.",

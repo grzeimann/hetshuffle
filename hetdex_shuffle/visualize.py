@@ -27,7 +27,9 @@ import numpy
 import six
 from six.moves import configparser
 import re
-from distutils.dir_util import mkpath
+# distutils has been removed in modern Python; provide a local mkpath replacement
+def mkpath(path):
+    os.makedirs(path, exist_ok=True)
 from .astrometry import TangentPlane as TP
 import os.path as op
 
