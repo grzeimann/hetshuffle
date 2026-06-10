@@ -2065,6 +2065,7 @@ def visualize_acam_clean(
     # candidate stars
     # Accumulate CSV rows: RA, Dec, acam_x, acam_y, img_x, img_y, g, r, i
     csv_rows = []
+    ds9_points = []
     for star in candidate_stars:
         ra_star, dec_star, label = star[:3]
         # Optional g, r, i provided as 4th-6th elements
@@ -2092,6 +2093,8 @@ def visualize_acam_clean(
                 color="magenta", fontsize=7, ha="center", va="bottom",
                 clip_on=False, zorder=10
             )
+            # Collect for DS9 regions output and CSV
+            ds9_points.append((x_acam, y_acam))
             # For the clean schema, img_x/img_y are the same as acam_x/acam_y
             csv_rows.append((ra_star, dec_star, x_acam, y_acam, x_acam, y_acam, gmag, rmag, imag))
 
@@ -2124,8 +2127,24 @@ def visualize_acam_clean(
                         ra_s, dec_s, ax_s, ay_s, ix_s, iy_s, g_s, r_s, i_s
                     )
                 )
-    except Exception:
+    except Exception as e:
+        log.warning("Could not write csv file: %s", e)
         # Be robust: CSV creation should not break visualization
+        pass
+
+    # Also write a DS9 region file matching the legacy _acam.reg output
+    try:
+        ds9_regions = config.get('directories', 'ds9_regions')
+        mkpath(ds9_regions)
+        stem = op.splitext(op.basename(outfile))[0]
+        region_file = os.path.join(ds9_regions, f"{stem}_acam.reg")
+        with open(region_file, 'w') as f_ds9region:
+            DS9region.writeHeader(f_ds9region)
+            for (xn, yn) in ds9_points:
+                DS9region.writeRegion(f_ds9region, xn, yn, 5.)
+    except Exception as e:
+        log.warning("Could not write DS9 region file: %s", e)
+        # Do not fail the visualization if region writing has issues
         pass
 
     fig.savefig(outfile, dpi=dpi)
