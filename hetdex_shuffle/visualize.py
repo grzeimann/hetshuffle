@@ -1585,7 +1585,6 @@ def retrieve_image_hips(ra, dec, fov_deg, yflip=True, scale=1.5):
 
     for survey in surveys:
         try:
-            continue
             params = {
                 "hips": survey,
                 "ra": ra,
