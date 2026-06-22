@@ -1202,6 +1202,7 @@ def visualize_acam(s, acamloc, ifu_centers, ifu_ids, guideWFSSol,
             target_ra=ra_input,
             target_dec=dec_input,
             fplane_provider=fplane_provider,
+            target_name=targetID,
         )
         return None
     except Exception as e:
@@ -1928,6 +1929,7 @@ def visualize_acam_clean(
     target_ra=None,
     target_dec=None,
     fplane_provider=None,
+    target_name=None,
 ):
     """
     Parameters
@@ -2135,8 +2137,8 @@ def visualize_acam_clean(
     try:
         ds9_regions = config.get('directories', 'ds9_regions')
         mkpath(ds9_regions)
-        stem = op.splitext(op.basename(outfile))[0]
-        region_file = os.path.join(ds9_regions, f"{stem}_acam.reg")
+        name = target_name if target_name else op.splitext(op.basename(outfile))[0]
+        region_file = os.path.join(ds9_regions, f"{name}_acam.reg")
         with open(region_file, 'w') as f_ds9region:
             DS9region.writeHeader(f_ds9region)
             for (xn, yn) in ds9_points:
