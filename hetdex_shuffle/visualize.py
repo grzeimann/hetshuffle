@@ -2060,8 +2060,15 @@ def visualize_acam_clean(
             acam_pix_scale, acam_x_origin, acam_y_origin,
             wcs=w_out,
         )
-        ax.plot(tx, ty, marker='*', color='yellow', markersize=4, markeredgewidth=1.5, zorder=16)
-        ax.text(tx + 8, ty + 8, f"Target ({tx:.1f}, {ty:.1f})", color='yellow', fontsize=8, ha='right', va='bottom', zorder=16)
+        # Only draw if the target falls within the true ACAM footprint
+        if (0 <= tx < acam_x_length) and (0 <= ty < acam_y_length):
+            ax.plot(tx, ty, marker='*', color='yellow', markersize=4, markeredgewidth=1.5, zorder=16)
+            ax.text(tx + 8, ty + 8, f"Target ({tx:.1f}, {ty:.1f})", color='yellow', fontsize=8, ha='right', va='bottom', zorder=16)
+        else:
+            try:
+                log.debug("Target outside ACAM FoV; not plotting star: (%.2f, %.2f)", tx, ty)
+            except Exception:
+                pass
 
     # candidate stars
     # Accumulate CSV rows: RA, Dec, acam_x, acam_y, img_x, img_y, g, r, i
