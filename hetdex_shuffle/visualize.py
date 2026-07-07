@@ -15,6 +15,7 @@ import astropy.units as aunit
 from astroquery.skyview import SkyView
 import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib.patheffects as pe
 from matplotlib.patches import (RegularPolygon, Circle, Rectangle, FancyArrow, Polygon,
                                 Arc, Arrow)
 from matplotlib.lines import Line2D
@@ -1551,7 +1552,7 @@ def visualizeDS9(s, r, ifu_centers, ifu_ids, guideWFSSol, cal_star_cand,
         if strf.split('(')[0] == 'circle':
             if "color=white" in strf.split(' '):
                 log.info("Found WFS star.")
-                s = re.split('[\( \) \,]', strf)
+                s = re.split(r'[\( \) \,]', strf)
                 loc = strf.find('wfs')
                 log.info("RA: %0.5f, Dec: %0.5f" % (float(s[1]), float(s[2])))
                 log.info("Probe: %s" % strf[loc:loc+4])
@@ -1561,7 +1562,7 @@ def visualizeDS9(s, r, ifu_centers, ifu_ids, guideWFSSol, cal_star_cand,
                         guideWFSSol[j][3] = float(s[2])
             if "color=yellow" in strf.split(' '):
                 log.info("Found Guide star.")
-                s = re.split('[\( \) \,]', strf)
+                s = re.split(r'[( ) ,]', strf)
                 loc = strf.find('gd')
                 log.info("RA: %0.5f, Dec: %0.5f" % (float(s[1]), float(s[2])))
                 log.info("Probe: %s" % strf[loc:loc+3])
@@ -2063,7 +2064,17 @@ def visualize_acam_clean(
         # Only draw if the target falls within the true ACAM footprint
         if (0 <= tx < acam_x_length) and (0 <= ty < acam_y_length):
             ax.plot(tx, ty, marker='*', color='cyan', markersize=4, markeredgewidth=1.5, zorder=16)
-            ax.text(tx + 8, ty + 8, f"({tx:.1f}, {ty:.1f})", color='cyan', fontsize=8, ha='right', va='bottom', zorder=16)
+            ax.text(tx + 8, ty + 8, f"({tx:.1f}, {ty:.1f})",
+                    color='white',
+                    fontsize=8,
+                    path_effects=[
+                        pe.Stroke(linewidth=2.5, foreground='black'),
+                        pe.Normal()
+                    ],
+                    ha='right',
+                    va='bottom',
+                    zorder=16
+                    )
         else:
             try:
                 log.debug("Target outside ACAM FoV; not plotting star: (%.2f, %.2f)", tx, ty)
