@@ -2019,9 +2019,15 @@ def visualize_acam_clean(
     # Display the padded image, but keep the ACAM pixel coordinate system for overlays via extent
     # Ensure blank/no-coverage pixels (NaN) render as solid black, not transparent white
     try:
-        cmap = matplotlib.cm.get_cmap('gray').copy()
+        if hasattr(matplotlib, 'colormaps'):
+            cmap = matplotlib.colormaps['gray'].copy()
+        else:
+            cmap = matplotlib.cm.get_cmap('gray').copy()
     except Exception:
-        cmap = matplotlib.cm.get_cmap('gray')
+        if hasattr(matplotlib, 'colormaps'):
+            cmap = matplotlib.colormaps['gray']
+        else:
+            cmap = matplotlib.cm.get_cmap('gray')
     try:
         cmap.set_bad(color='black', alpha=1.0)
         cmap.set_under(color='black', alpha=1.0)
