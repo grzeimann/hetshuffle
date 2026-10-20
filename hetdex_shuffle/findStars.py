@@ -326,6 +326,12 @@ def queryGAIA(ra, dec, boxsize, maxsources=10000):
                            frame='fk5')
     Data = vquery.query_region(field, width=("%fd" % boxsize),
                                catalog="I/337/gaia")[0]
+    gmag_column = next((name for name in ("Gmag", "__Gmag_",
+                                          "phot_g_mean_mag")
+                        if name in Data.colnames), None)
+    if gmag_column is None:
+        raise KeyError("GAIA result has no G magnitude column; available "
+                       "columns: %s" % Data.colnames)
     oo = []
     g_i = 1.  # g-i color
     for i, obj in enumerate(Data['Source']):
@@ -333,7 +339,7 @@ def queryGAIA(ra, dec, boxsize, maxsources=10000):
         oid_b = 0
         ra = Data['_RAJ2000'][i]
         dec = Data['_DEJ2000'][i]
-        G = Data['__Gmag_'][i]
+        G = Data[gmag_column][i]
         g = G + 0.0939 + 0.6758 * g_i + 0.04 * g_i**2 - 0.003 * g_i**3
         if numpy.any([j for j in Data.mask[i]]):
             continue
