@@ -326,7 +326,7 @@ def queryGAIA(ra, dec, boxsize, maxsources=10000):
                            frame='fk5')
     Data = vquery.query_region(field, width=("%fd" % boxsize),
                                catalog="I/337/gaia")[0]
-    gmag_column = next((name for name in ("Gmag", "__Gmag_",
+    gmag_column = next((name for name in ("Gmag", "<Gmag>", "__Gmag_",
                                           "phot_g_mean_mag")
                         if name in Data.colnames), None)
     if gmag_column is None:
@@ -511,7 +511,7 @@ def ps1_cone_table(
     Cone search PS1 and return an astropy Table.
     Also applies the same selection used in get_panstarrs_data from the local DB:
       - primaryDetection > 0
-      - (rPSFMag - rKronMag) < 0.05
+      - (rPSFMag - rKronMag) < 0.05 when rKronMag is valid
       - g/r/i quality factors > 0.85
       - gPSFMag, rPSFMag, iPSFMag > 0
     Column names follow PS1 DR2 API; function tolerates missing columns by
@@ -572,8 +572,10 @@ def ps1_cone_table(
     # (rPSFMag - rKronMag) < 0.05
     if has_cols(["rPSFMag", "rKronMag"]):
         try:
-            diff = numpy.array(tab["rPSFMag"]) - numpy.array(tab["rKronMag"])
-            sel &= diff < 0.05
+            rpsf = numpy.array(tab["rPSFMag"], dtype=float)
+            rkron = numpy.array(tab["rKronMag"], dtype=float)
+            valid_kron = numpy.isfinite(rkron) & (rkron > 0.)
+            sel &= ~valid_kron | ((rpsf - rkron) < 0.05)
         except Exception:
             pass
 
