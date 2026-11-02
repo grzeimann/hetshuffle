@@ -560,6 +560,7 @@ def update_coords_for_proper_motion(ra, dec, epoch, log, args):
                       frame='icrs')
         idx, d2d, d3d = c1.match_to_catalog_sky(c2)
         if d2d.arcsec < 2.:
+            args.pmRA, args.pmDEC = pmcat[idx, -2], pmcat[idx, -1]
             deltaRA = ((current_epoch - epoch) * pmcat[idx, -2] /
                        1e3 / 3600. / numpy.cos(dec * numpy.pi / 180.))
             deltaDE = ((current_epoch - epoch) * pmcat[idx, -1] /

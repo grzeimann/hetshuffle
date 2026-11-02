@@ -42,6 +42,7 @@ except ImportError:
     from urllib.parse import urlencode
 
 from astropy.table import Table
+from astropy.time import Time
 import requests
 from PIL import Image
 from io import BytesIO
@@ -1204,6 +1205,7 @@ def visualize_acam(s, acamloc, ifu_centers, ifu_ids, guideWFSSol,
             target_dec=dec_input,
             fplane_provider=fplane_provider,
             target_name=targetID,
+            proper_motion=s[3:] or (0., 0.),
         )
         return None
     except Exception as e:
@@ -1931,6 +1933,7 @@ def visualize_acam_clean(
     target_dec=None,
     fplane_provider=None,
     target_name=None,
+    proper_motion=(0., 0.), panstarrs_epoch=2013., observing_epoch=None,
 ):
     """
     Parameters
@@ -2070,17 +2073,67 @@ def visualize_acam_clean(
         # Only draw if the target falls within the true ACAM footprint
         if (0 <= tx < acam_x_length) and (0 <= ty < acam_y_length):
             ax.plot(tx, ty, marker='*', color='cyan', markersize=4, markeredgewidth=1.5, zorder=16)
-            ax.text(tx + 8, ty + 8, f"({tx:.1f}, {ty:.1f})",
-                    color='white',
-                    fontsize=8,
-                    path_effects=[
-                        pe.Stroke(linewidth=2.5, foreground='black'),
-                        pe.Normal()
-                    ],
-                    ha='right',
-                    va='bottom',
-                    zorder=16
-                    )
+            pm_ra, pm_dec = proper_motion
+            log.info(f"Proper motion: {pm_ra:.2f} mas/yr RA, {pm_dec:.2f} mas/yr Dec")
+            years = panstarrs_epoch - (observing_epoch or Time.now().decimalyear)
+            log.info(f"Delta change in years: {years:0.1f}")
+            image_ra = float(target_ra) + years * pm_ra / 3.6e6 / numpy.cos(numpy.deg2rad(target_dec))
+            image_dec = float(target_dec) + years * pm_dec / 3.6e6
+            image_x, image_y = _sky_to_acam(image_ra, image_dec, ra_shuffle, dec_shuffle,
+                                             pa, acam_offset, acam_pix_scale, acam_x_origin,
+                                             acam_y_origin, wcs=w_out)
+            delta_x = tx - image_x
+            delta_y = ty - image_y
+            log.info(f"Image position change: ({delta_x:.1f}, {delta_y:.1f})")
+            delta_x_arcsec = (tx - image_x) * acam_pix_scale
+            delta_y_arcsec = (ty - image_y) * acam_pix_scale
+            log.info(f"Image position change (arcsec): ({delta_x_arcsec:.1f}, {delta_y_arcsec:.1f})")
+            if pm_ra or pm_dec:
+                arrow = ax.annotate(
+                    '',
+                    xy=(tx, ty),  # Arrowhead: HPF science-fiber position
+                    xytext=(image_x, image_y),  # Tail: Pan-STARRS star position
+                    arrowprops=dict(
+                        arrowstyle='->',
+                        color='white',
+                        lw=0.9,
+                        linestyle='--',
+                        mutation_scale=12,
+                        shrinkA=0,
+                        shrinkB=0,
+                        connectionstyle='arc3,rad=0',
+                    ),
+                    zorder=16,
+                )
+
+                arrow.arrow_patch.set_path_effects([
+                    pe.Stroke(linewidth=2.5, foreground='black'),
+                    pe.Normal(),
+                ])
+                ax.plot(
+                    image_x,
+                    image_y,
+                    marker='o',
+                    markersize=3,
+                    markerfacecolor='white',
+                    markeredgecolor='black',
+                    markeredgewidth=0.8,
+                    zorder=17,
+                )
+            ax.text(
+                tx + 8,
+                ty + 8,
+                f"({tx:.1f}, {ty:.1f})",
+                color='white',
+                fontsize=8,
+                path_effects=[
+                    pe.Stroke(linewidth=2.5, foreground='black'),
+                    pe.Normal(),
+                ],
+                ha='right',
+                va='bottom',
+                zorder=16,
+            )
         else:
             try:
                 log.debug("Target outside ACAM FoV; not plotting star: (%.2f, %.2f)", tx, ty)
@@ -2115,8 +2168,15 @@ def visualize_acam_clean(
             ax.text(
                 x_acam, y_acam + 12,
                 f"({x_acam:.1f}, {y_acam:.1f})",
-                color="magenta", fontsize=7, ha="center", va="bottom",
-                clip_on=False, zorder=10
+                color='white',
+                fontsize=6,
+                path_effects=[
+                    pe.Stroke(linewidth=2.5, foreground='black'),
+                    pe.Normal(),
+                ],
+                ha='right',
+                va='bottom',
+                zorder=14,
             )
             # Collect for DS9 regions output and CSV
             ds9_points.append((x_acam, y_acam))

@@ -1381,8 +1381,7 @@ def do(args, data, radius=None, start=1, stop=numpy.inf, orig_loc=None,
                         fplane_provider = FPlaneCentroids(ra_shuffle, dec_shuffle, pa, fplane_off, ifu_centers, ifu_ids)
                     except Exception:
                         fplane_provider = None
-                    acamstar_pos = visualize.visualize_acam([orig_loc[0],
-                                                             orig_loc[1], pa],
+                    acamstar_pos = visualize.visualize_acam([orig_loc[0], orig_loc[1], pa, args.pmRA or 0., args.pmDEC or 0.],
                                                             result[-1],
                                                             ifu_centers,
                                                             ifu_ids,
