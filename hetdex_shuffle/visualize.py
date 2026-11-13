@@ -152,17 +152,80 @@ def SDSS_coverage(ra, dec):
 
 
 def retrieve_image(ra, dec, size, config, yflip, scale=1.5):
-    """Wrapper function for retrieving image from SDSS. If region outside SDSS
-    coverage, it uses DSS image instead.
+    """Retrieve a finder image, with independent fallbacks.
+
+    HiPS remains the preferred source.  If CDS is unavailable, use the
+    Legacy Survey southern cutout service, then ESO DSS, before returning the
+    existing blank-image fallback.
+
     (ra, dec, size) in degree
     """
-    return retrieve_image_hips(ra, dec, size, yflip, scale)
+    log = logging.getLogger('shuffle')
+
+    try:
+        image = retrieve_image_hips(ra, dec, size, yflip, scale)
+        if image[3]:
+            return image
+    except Exception as e:
+        log.warning("HiPS image retrieval failed: %s", e)
+
+    try:
+        return retrieve_image_legacy(ra, dec, size, yflip, scale)
+    except Exception as e:
+        log.warning("Legacy Survey image retrieval failed: %s", e)
+
+    try:
+        return retrieve_image_DSS(ra, dec, size, yflip)
+    except Exception as e:
+        log.warning("DSS image retrieval failed: %s", e)
+
+    return return_blank_image(int(size * 3600. / scale), scale)
 
 
 def return_blank_image(size_pix, scale):
     imarray = numpy.zeros((size_pix, size_pix))
     CD = numpy.matrix([[-1.*scale/3600., 0], [0, 1.*scale/3600.]])
     return imarray, CD, '', ''
+
+
+def retrieve_image_legacy(ra, dec, fov_deg, yflip=True, scale=1.5):
+    """Retrieve a Legacy Survey DR11-south FITS cutout.
+
+    The Legacy Survey limits cutouts to 512 pixels, so enlarge the requested
+    pixel scale when necessary to preserve the complete field of view.
+    """
+    url = "https://www.legacysurvey.org/viewer/fits-cutout"
+    requested_pixels = int(round(fov_deg * 3600. / scale))
+    size_pix = max(1, min(512, requested_pixels))
+    pixscale = float(fov_deg) * 3600. / float(size_pix)
+    params = {
+        "ra": ra,
+        "dec": dec,
+        "layer": "ls-dr11-south",
+        "pixscale": pixscale,
+        "size": size_pix,
+        "bands": "g",
+    }
+
+    response = requests.get(url, params=params, timeout=20)
+    response.raise_for_status()
+    with fits.open(BytesIO(response.content)) as hdul:
+        hdu = hdul[0]
+        imarray = numpy.asarray(hdu.data).copy()
+        header = hdu.header
+
+    if imarray.ndim != 2:
+        raise ValueError("Legacy Survey cutout is not a 2D image")
+
+    CD = numpy.matrix([
+        [header['CD1_1'], header['CD1_2']],
+        [header['CD2_1'], header['CD2_2']],
+    ], dtype=float)
+    if yflip:
+        imarray = imarray[::-1, :]
+        CD[1, :] *= -1.0
+
+    return imarray, CD, response.url, 'Legacy DR11-south'
 
 
 def retrieve_image_PS1(ra, dec, size, yflip, scale):
