@@ -4,6 +4,7 @@ from __future__ import (absolute_import, division, print_function,
 import logging
 import os
 import math
+import warnings
 try:
     from StringIO import StringIO  # for Python2
 except ImportError:
@@ -11,6 +12,7 @@ except ImportError:
 import json
 
 from astropy.io import fits
+from astropy.io.fits.verify import VerifyWarning
 import astropy.units as aunit
 from astroquery.skyview import SkyView
 import matplotlib
@@ -22,6 +24,7 @@ from matplotlib.lines import Line2D
 from reproject import reproject_interp
 from astropy.visualization import ImageNormalize, PercentileInterval, AsinhStretch
 from astropy.wcs import WCS
+from astropy.wcs.wcs import FITSFixedWarning
 from astropy.stats import biweight_location, biweight_midvariance, mad_std
 from matplotlib.collections import PatchCollection
 import numpy
@@ -151,7 +154,8 @@ def SDSS_coverage(ra, dec):
     return False
 
 
-def retrieve_image(ra, dec, size, config, yflip, scale=1.5):
+def retrieve_image(ra, dec, size, config, yflip, scale=1.5,
+                   return_wcs=False):
     """Retrieve a finder image, with independent fallbacks.
 
     HiPS remains the preferred source.  If CDS is unavailable, use the
@@ -163,23 +167,28 @@ def retrieve_image(ra, dec, size, config, yflip, scale=1.5):
     log = logging.getLogger('shuffle')
 
     try:
-        image = retrieve_image_hips(ra, dec, size, yflip, scale)
+        image = retrieve_image_hips(ra, dec, size, yflip, scale,
+                                    return_wcs=return_wcs)
         if image[3]:
             return image
     except Exception as e:
         log.warning("HiPS image retrieval failed: %s", e)
 
     try:
-        return retrieve_image_legacy(ra, dec, size, yflip, scale)
+        return retrieve_image_legacy(ra, dec, size, yflip, scale,
+                                     return_wcs=return_wcs)
     except Exception as e:
         log.warning("Legacy Survey image retrieval failed: %s", e)
 
     try:
-        return retrieve_image_DSS(ra, dec, size, yflip)
+        return retrieve_image_DSS(ra, dec, size, yflip,
+                                  return_wcs=return_wcs)
     except Exception as e:
         log.warning("DSS image retrieval failed: %s", e)
 
-    return return_blank_image(int(size * 3600. / scale), scale)
+    blank = return_blank_image(int(size * 3600. / scale), scale)
+    return _retrieved_image(blank[0], blank[1], blank[2], blank[3],
+                            return_wcs=return_wcs)
 
 
 def return_blank_image(size_pix, scale):
@@ -201,7 +210,41 @@ def _flip_image_y_and_cd(imarray, CD):
     return flipped, flipped_cd
 
 
-def retrieve_image_legacy(ra, dec, fov_deg, yflip=True, scale=1.5):
+def _wcs_from_header(header, image_shape, yflip=False):
+    """Build a WCS for an image, accounting for an array-Y reversal."""
+    try:
+        # External survey headers can contain legacy PC cards and non-standard
+        # metadata such as SKEW.  Astropy normalizes these correctly, but the
+        # associated warnings are not actionable for this visualization.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", FITSFixedWarning)
+            warnings.simplefilter("ignore", VerifyWarning)
+            image_wcs = WCS(header, naxis=2)
+        if yflip:
+            # New array row y corresponds to old FITS pixel row
+            # (NAXIS2 + 1 - y).  Update both the reference pixel and the
+            # linear pixel-Y direction.
+            image_wcs.wcs.crpix[1] = image_shape[0] + 1.0 - image_wcs.wcs.crpix[1]
+            if image_wcs.wcs.has_cd():
+                image_wcs.wcs.cd[:, 1] *= -1.0
+            else:
+                image_wcs.wcs.pc[:, 1] *= -1.0
+        return image_wcs
+    except Exception:
+        return None
+
+
+def _retrieved_image(imarray, CD, url, source, image_wcs=None,
+                     return_wcs=False):
+    """Return the legacy four-tuple, optionally extended with a WCS."""
+    result = (imarray, CD, url, source)
+    if return_wcs:
+        return result + (image_wcs,)
+    return result
+
+
+def retrieve_image_legacy(ra, dec, fov_deg, yflip=True, scale=1.5,
+                          return_wcs=False):
     """Retrieve a Legacy Survey DR11-south FITS cutout.
 
     The Legacy Survey limits cutouts to 512 pixels, so enlarge the requested
@@ -225,7 +268,7 @@ def retrieve_image_legacy(ra, dec, fov_deg, yflip=True, scale=1.5):
     with fits.open(BytesIO(response.content)) as hdul:
         hdu = hdul[0]
         imarray = numpy.asarray(hdu.data).copy()
-        header = hdu.header
+        header = hdu.header.copy()
 
     if imarray.ndim != 2:
         raise ValueError("Legacy Survey cutout is not a 2D image")
@@ -237,7 +280,9 @@ def retrieve_image_legacy(ra, dec, fov_deg, yflip=True, scale=1.5):
     if yflip:
         imarray, CD = _flip_image_y_and_cd(imarray, CD)
 
-    return imarray, CD, response.url, 'Legacy DR11-south'
+    image_wcs = _wcs_from_header(header, imarray.shape, yflip=yflip)
+    return _retrieved_image(imarray, CD, response.url, 'Legacy DR11-south',
+                            image_wcs=image_wcs, return_wcs=return_wcs)
 
 
 def retrieve_image_PS1(ra, dec, size, yflip, scale):
@@ -479,7 +524,7 @@ def retrieve_image_SDSS(ra, dec, size, config, yflip, scale=1.5):
     return imarray, CD, url_sdssJPEG+'?'+request_sdss, 'SDSS'
 
 
-def retrieve_image_SkyView(ra, dec, size, yflip, scale):
+def retrieve_image_SkyView(ra, dec, size, yflip, scale, return_wcs=False):
     size_pix = int(size*3600./scale)
 
     paths = SkyView.get_images(position='%3.5f %2.5f' % (ra, dec),
@@ -489,20 +534,24 @@ def retrieve_image_SkyView(ra, dec, size, yflip, scale):
     print(paths)
     if paths:
         hdu = paths[0][0].header
-        imarray = paths[0][0].data
+        imarray = numpy.asarray(paths[0][0].data).copy()
         CD = numpy.matrix([[hdu['CDELT1'], 0], [0, hdu['CDELT2']]])
         if yflip:
             imarray, CD = _flip_image_y_and_cd(imarray, CD)
+        image_wcs = _wcs_from_header(hdu, imarray.shape, yflip=yflip)
     else:
         # Default to PS1
         log = logging.getLogger('shuffle')
         log.warning("Could not contact SDSS or DSS. Falling back to PS1!")
-        return retrieve_image_PS1(ra, dec, size, yflip, scale)
+        fallback = retrieve_image_PS1(ra, dec, size, yflip, scale)
+        return _retrieved_image(fallback[0], fallback[1], fallback[2],
+                                fallback[3], return_wcs=return_wcs)
 
-    return imarray, CD, '', 'DSS2'
+    return _retrieved_image(imarray, CD, '', 'DSS2',
+                            image_wcs=image_wcs, return_wcs=return_wcs)
 
 
-def retrieve_image_DSS(ra, dec, size, yflip):
+def retrieve_image_DSS(ra, dec, size, yflip, return_wcs=False):
     """Load image from dss server(fits) and return the image array, the url,
     and the CD matrix (there is rotation in DSS images).
     CD matrix transforms the pixel position(x,y) to world coordinate(ra,dec).
@@ -517,14 +566,17 @@ def retrieve_image_DSS(ra, dec, size, yflip):
     # imfile = urlopen(url_dss, request_dss.encode())
     # imarray = plt.imread(StringIO(imfile.read()), format='gif')
     # print(url_dss+'?'+request_dss_fits)
-    hdulist = fits.open(url_dss+'?'+request_dss)
-    hdu = hdulist[0].header
-    imarray = hdulist[0].data
-    CD = numpy.matrix([[hdu['CD1_1'], hdu['CD1_2']], [hdu['CD2_1'],
-                       hdu['CD2_2']]])
+    with fits.open(url_dss+'?'+request_dss) as hdulist:
+        hdu = hdulist[0]
+        header = hdu.header.copy()
+        imarray = numpy.asarray(hdu.data).copy()
+    CD = numpy.matrix([[header['CD1_1'], header['CD1_2']], [header['CD2_1'],
+                       header['CD2_2']]])
     if yflip:
         imarray, CD = _flip_image_y_and_cd(imarray, CD)
-    return imarray, CD, url_dss+'?'+request_dss, 'DSS'
+    image_wcs = _wcs_from_header(header, imarray.shape, yflip=yflip)
+    return _retrieved_image(imarray, CD, url_dss+'?'+request_dss, 'DSS',
+                            image_wcs=image_wcs, return_wcs=return_wcs)
 
 
 def plotFocalPlane(dra, ddec, pa, scale, ifu_centers, ifu_ids, dec, im_size,
@@ -1228,26 +1280,35 @@ def visualize_acam(s, acamloc, ifu_centers, ifu_ids, guideWFSSol,
     vertical_alignment = 'top' if (pa_offset % 360) < 180 else 'bottom'
 
     # Get image at centered at the center of the ACAM
-    imarray, CD, url, img_src = retrieve_image(ra_shuffle, dec_shuffle,
-                                               img_size, config,
-                                               config.getboolean("General",
-                                                                 "yflip"),
-                                               0.25)
+    imarray, CD, url, img_src, retrieved_wcs = retrieve_image(
+        ra_shuffle, dec_shuffle,
+        img_size, config,
+        config.getboolean("General", "yflip"),
+        0.25,
+        return_wcs=True,
+    )
 
     # NEW: delegate ACAM visualization to the cleaner implementation
     try:
-        # Build an input WCS for the retrieved image using the authoritative
-        # sky center and the returned CD/pixel scale. Define WCS entirely from
-        # CRVAL=(ra_shuffle,dec_shuffle), CRPIX=(nx+1)/2,(ny+1)/2 and CD.
         ny, nx = imarray.shape[:2]
-        w_in = WCS(naxis=2)
-        w_in.wcs.ctype = ["RA---TAN", "DEC--TAN"]
-        w_in.wcs.crval = [ra_shuffle, dec_shuffle]
-        w_in.wcs.crpix = [(nx + 1.0) / 2.0, (ny + 1.0) / 2.0]
-        # CD is a numpy.matrix; convert to ndarray
-        w_in.wcs.cd = numpy.array([[float(CD[0, 0]), float(CD[0, 1])],
-                                   [float(CD[1, 0]), float(CD[1, 1])]])
-        hdu = fits.PrimaryHDU(data=imarray, header=w_in.to_header())
+        if retrieved_wcs is not None:
+            # Keep the provider's CRVAL/CRPIX and full linear WCS.  The
+            # retrieval layer has already adjusted it if the array was
+            # vertically flipped.
+            w_in = retrieved_wcs.deepcopy()
+        else:
+            # Fallback for image providers that return no celestial WCS.
+            w_in = WCS(naxis=2)
+            w_in.wcs.ctype = ["RA---TAN", "DEC--TAN"]
+            w_in.wcs.crval = [ra_shuffle, dec_shuffle]
+            w_in.wcs.crpix = [(nx + 1.0) / 2.0, (ny + 1.0) / 2.0]
+            # CD is a numpy.matrix; convert to ndarray
+            w_in.wcs.cd = numpy.array([[float(CD[0, 0]), float(CD[0, 1])],
+                                       [float(CD[1, 0]), float(CD[1, 1])]])
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", FITSFixedWarning)
+            warnings.simplefilter("ignore", VerifyWarning)
+            hdu = fits.PrimaryHDU(data=imarray, header=w_in.to_header())
         hdul = fits.HDUList([hdu])
 
         # Build candidate star tuples: (ra, dec, label, g, r, i)
@@ -1651,7 +1712,8 @@ def visualizeDS9(s, r, ifu_centers, ifu_ids, guideWFSSol, cal_star_cand,
                         guideWFSSol[j][3] = float(s[2])
     return guideWFSSol
 
-def retrieve_image_hips(ra, dec, fov_deg, yflip=True, scale=1.5):
+def retrieve_image_hips(ra, dec, fov_deg, yflip=True, scale=1.5,
+                        return_wcs=False):
     surveys = ["CDS/P/PanSTARRS/DR1/g", "CDS/P/DSS2/blue", "CDS/P/SDSS9/g"]
     url = "https://alasky.cds.unistra.fr/hips-image-services/hips2fits"
     width = int(fov_deg * 3600. / scale)
@@ -1678,7 +1740,9 @@ def retrieve_image_hips(ra, dec, fov_deg, yflip=True, scale=1.5):
             r.raise_for_status()
 
             with fits.open(BytesIO(r.content)) as hdul:
-                imarray = hdul[0].data
+                hdu = hdul[0]
+                header = hdu.header.copy()
+                imarray = numpy.asarray(hdu.data).copy()
 
             # Require a minimally useful image size
             if imarray is None or min(imarray.shape[-2:]) <= 32:
@@ -1689,7 +1753,10 @@ def retrieve_image_hips(ra, dec, fov_deg, yflip=True, scale=1.5):
             if yflip:
                 imarray, CD = _flip_image_y_and_cd(imarray, CD)
 
-            return imarray, CD, r.url, survey
+            image_wcs = _wcs_from_header(header, imarray.shape, yflip=yflip)
+            return _retrieved_image(imarray, CD, r.url, survey,
+                                    image_wcs=image_wcs,
+                                    return_wcs=return_wcs)
         except Exception as e:
             # Try the next survey on any retrieval/parsing error
             try:
@@ -1697,7 +1764,9 @@ def retrieve_image_hips(ra, dec, fov_deg, yflip=True, scale=1.5):
             except Exception:
                 pass
             continue
-    return return_blank_image(width, scale)
+    blank = return_blank_image(width, scale)
+    return _retrieved_image(blank[0], blank[1], blank[2], blank[3],
+                            return_wcs=return_wcs)
 
 
 
@@ -2121,7 +2190,10 @@ def visualize_acam_clean(
         origin="lower",
         cmap=cmap,
         norm=norm,
-        extent=[-pad, acam_x_length - 1 + pad, -pad, acam_y_length - 1 + pad],
+        # Extent describes image edges; WCS/overlay coordinates describe
+        # pixel centers.  Include the half-pixel edges explicitly.
+        extent=[-pad - 0.5, acam_x_length + pad - 0.5,
+                -pad - 0.5, acam_y_length + pad - 0.5],
     )
 
     log = logging.getLogger('shuffle')
