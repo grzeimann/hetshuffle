@@ -188,6 +188,19 @@ def return_blank_image(size_pix, scale):
     return imarray, CD, '', ''
 
 
+def _flip_image_y_and_cd(imarray, CD):
+    """Flip an image in array-Y and keep its pixel-to-sky WCS consistent.
+
+    FITS CD matrices have world-coordinate axes in rows and pixel axes in
+    columns.  Reversing the image rows changes the sign of the pixel-Y axis,
+    so the second *column* of CD must be negated as well.
+    """
+    flipped = numpy.asarray(imarray)[::-1, :]
+    flipped_cd = numpy.matrix(numpy.asarray(CD, dtype=float), copy=True)
+    flipped_cd[:, 1] *= -1.0
+    return flipped, flipped_cd
+
+
 def retrieve_image_legacy(ra, dec, fov_deg, yflip=True, scale=1.5):
     """Retrieve a Legacy Survey DR11-south FITS cutout.
 
@@ -222,8 +235,7 @@ def retrieve_image_legacy(ra, dec, fov_deg, yflip=True, scale=1.5):
         [header['CD2_1'], header['CD2_2']],
     ], dtype=float)
     if yflip:
-        imarray = imarray[::-1, :]
-        CD[1, :] *= -1.0
+        imarray, CD = _flip_image_y_and_cd(imarray, CD)
 
     return imarray, CD, response.url, 'Legacy DR11-south'
 
@@ -479,6 +491,8 @@ def retrieve_image_SkyView(ra, dec, size, yflip, scale):
         hdu = paths[0][0].header
         imarray = paths[0][0].data
         CD = numpy.matrix([[hdu['CDELT1'], 0], [0, hdu['CDELT2']]])
+        if yflip:
+            imarray, CD = _flip_image_y_and_cd(imarray, CD)
     else:
         # Default to PS1
         log = logging.getLogger('shuffle')
@@ -506,10 +520,10 @@ def retrieve_image_DSS(ra, dec, size, yflip):
     hdulist = fits.open(url_dss+'?'+request_dss)
     hdu = hdulist[0].header
     imarray = hdulist[0].data
-    if yflip:
-            imarray = imarray[::-1, :]
     CD = numpy.matrix([[hdu['CD1_1'], hdu['CD1_2']], [hdu['CD2_1'],
                        hdu['CD2_2']]])
+    if yflip:
+        imarray, CD = _flip_image_y_and_cd(imarray, CD)
     return imarray, CD, url_dss+'?'+request_dss, 'DSS'
 
 
@@ -1645,8 +1659,6 @@ def retrieve_image_hips(ra, dec, fov_deg, yflip=True, scale=1.5):
     # hips2fits defines fov as the size of the largest image dimension
     pixscale = float(fov_deg) / float(max(width, height))   # deg / pixel
     cd11, cd22 = -pixscale, pixscale
-    if yflip:
-        cd22 *= -1.0
 
     log = logging.getLogger('shuffle')
 
@@ -1672,11 +1684,10 @@ def retrieve_image_hips(ra, dec, fov_deg, yflip=True, scale=1.5):
             if imarray is None or min(imarray.shape[-2:]) <= 32:
                 raise ValueError("HIPS image is empty or too small")
 
-            if yflip:
-                imarray = imarray[::-1]
-
             CD = numpy.matrix([[cd11, 0.0],
                                [0.0,  cd22]])
+            if yflip:
+                imarray, CD = _flip_image_y_and_cd(imarray, CD)
 
             return imarray, CD, r.url, survey
         except Exception as e:
