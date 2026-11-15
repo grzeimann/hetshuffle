@@ -339,3 +339,20 @@ Use small, reviewable commits rather than one large infrastructure change:
 8. Add pre-commit hooks and P1 tests incrementally.
 
 Each step should leave `main` installable and the general test suite passing.
+
+## Implementation checklist
+
+- [x] 1. Reconcile dependency metadata and define Python 3.12+ as the supported
+  deployment floor. Verify the package metadata, environment definition, and
+  requirements are consistent with the mountain target.
+- [ ] 2. Resolve the mountain dependency boundary for `reproject`, database
+  catalogs, and DS9.
+- [ ] 3. Add development dependencies and basic pytest configuration.
+- [ ] 4. Add P0 deterministic tests and synthetic fixtures.
+- [ ] 5. Add Makefile commands that mirror CI.
+- [ ] 6. Add the GitHub Actions test workflow.
+- [ ] 7. Add the pull-request template and configure branch protection.
+- [ ] 8. Add pre-commit hooks and P1 tests incrementally.
+
+Current checkpoint: item 1 is complete and committed locally. The branch is
+not being pushed until the remaining implementation items are finished.

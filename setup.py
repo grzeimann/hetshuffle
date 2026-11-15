@@ -8,7 +8,7 @@ except ImportError:
 from setuptools import setup, find_packages
 
 install_requires = ['numpy<2', 'scipy', 'astropy', 'astroquery', 'matplotlib',
-                    'pyds9', 'psycopg2-binary', 'six']
+                    'reproject', 'pyds9', 'psycopg2-binary', 'six']
 
 extras_require = {'oracle': ['cx_Oracle', ]}
 
@@ -42,14 +42,14 @@ setup(
     install_requires=install_requires,
     extras_require=extras_require,
 
+    python_requires=">=3.12",
     classifiers=["Development Status :: 3 - Alpha",
                  "Environment :: Console",
                  "Intended Audience :: Science/Research",
-                 "License :: OSI Approved :: GNU General Public License (GPL)",
+                 "License :: OSI Approved :: BSD License",
                  "Operating System :: Unix",
-                 "Programming Language :: Python :: 2.7",
-                 # "Programming Language :: Python :: 3.4",
-                 # "Programming Language :: Python :: 3.5",
+                 "Programming Language :: Python :: 3",
+                 "Programming Language :: Python :: 3.12",
                  "Topic :: Scientific/Engineering :: Astronomy",
                  ]
 )
