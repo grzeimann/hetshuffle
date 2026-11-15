@@ -27,6 +27,29 @@ For an SSH remote, use:
 git@github.com:grzeimann/hetshuffle.git
 ```
 
+## Contributor access and onboarding
+
+The normal collaboration path is direct work in the canonical repository.
+People who are not yet contributors should contact a repository maintainer
+before creating a fork or opening a PR. The request should include their
+GitHub username and a short description of the work they intend to do.
+
+After confirming the contributor, a maintainer should add them to the
+repository with GitHub `Write` access. This allows them to push feature
+branches while branch protection continues to prevent direct changes to
+`main`. Contributors should not need administrator or maintainer-level access
+for ordinary development.
+
+Once the invitation is accepted, the contributor should clone the canonical
+repository and use `origin` for the canonical remote. All work still goes on a
+feature branch and through a pull request; write access is not permission to
+push directly to `main`.
+
+Forks remain a fallback for people who are awaiting access, contributing from
+outside the collaboration, or unable to receive repository access. In that
+case, use the fork instructions below and open a PR against
+`grzeimann/hetshuffle:main`.
+
 ## Git configuration
 
 Configure your author information once on each computer. Add the following to
@@ -109,7 +132,8 @@ review those changes and run it again until it passes.
 
 ### Clone the repository
 
-Use one of these commands for a new local checkout:
+Approved contributors should use one of these commands for a new local
+checkout:
 
 ```bash
 git clone git@github.com:grzeimann/hetshuffle.git
@@ -138,8 +162,8 @@ git switch -c descriptive-branch-name
 Use short, descriptive branch names such as `fix-config-path` or
 `add-target-visualization`. Avoid spaces in branch names.
 
-If you do not have permission to push branches to the canonical repository,
-fork it first, clone your fork, and add the canonical repository as `upstream`:
+If you are using the fallback fork workflow, clone your fork and add the
+canonical repository as `upstream`:
 
 ```bash
 git clone git@github.com:YOUR-USER/hetshuffle.git
