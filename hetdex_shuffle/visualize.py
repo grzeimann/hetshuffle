@@ -21,6 +21,7 @@ import matplotlib.patheffects as pe
 from matplotlib.patches import (RegularPolygon, Circle, Rectangle, FancyArrow, Polygon,
                                 Arc, Arrow)
 from matplotlib.lines import Line2D
+from reproject import reproject_interp
 from astropy.visualization import ImageNormalize, PercentileInterval, AsinhStretch
 from astropy.wcs import WCS
 from astropy.wcs.wcs import FITSFixedWarning
@@ -52,18 +53,6 @@ from io import BytesIO
 from . import findStars
 
 matplotlib.rcParams['text.usetex'] = False
-
-
-def _get_reproject_interp():
-    """Load the optional reprojection dependency when ACAM rendering needs it."""
-    try:
-        from reproject import reproject_interp
-    except ImportError as exc:
-        raise ImportError(
-            "ACAM reprojection requires the optional 'reproject' package; "
-            "install it with 'pip install hetdex-shuffle[visualization]'"
-        ) from exc
-    return reproject_interp
 
 
 class DS9region(object):
@@ -2137,7 +2126,6 @@ def visualize_acam_clean(
     )
 
     # 2) Reproject downloaded image onto the PADDED ACAM grid
-    reproject_interp = _get_reproject_interp()
     acam_image, footprint = reproject_interp(
         im_hdul,
         w_out_pad,

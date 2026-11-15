@@ -8,12 +8,10 @@ except ImportError:
 from setuptools import setup, find_packages
 
 install_requires = ['numpy<2', 'scipy', 'astropy', 'astroquery', 'matplotlib',
-                    'six']
+                    'reproject', 'psycopg2-binary', 'six']
 
 extras_require = {
     'oracle': ['cx_Oracle', ],
-    'visualization': ['reproject', ],
-    'database': ['psycopg2-binary', ],
     'ds9': ['pyds9', ],
 }
 

@@ -40,9 +40,9 @@ The repository currently has no test directory, CI workflow, development
 dependency extra, or pull-request template. Before relying on CI, reconcile
 the package metadata:
 
-- The optional `reproject`, `pyds9`, and `psycopg2-binary` integrations must
-  remain consistently represented as extras in the packaging metadata and as
-  optional entries in environment setup instructions.
+- Core metadata must consistently require `reproject` and PostgreSQL support.
+  Only the DS9/XPA integration should remain optional and represented as an
+  extra in packaging and environment setup instructions.
 - `pyproject.toml` declares Python `>=3.8`, `environment.yml` uses Python 3.11,
   and `setup.py` still advertises a Python 2.7 classifier. Choose and document
   the supported Python versions, then make the metadata agree.
@@ -65,20 +65,22 @@ The environment currently provides the core scientific stack:
 - Python 3.12.
 - NumPy 1.x, SciPy, Astropy, Astroquery, Matplotlib, and Six.
 
-The environment currently does not provide `reproject`, `pyds9`, or
-`psycopg2-binary`. Item 2 resolves that boundary as follows:
+The mountain workflow requires `reproject` and PostgreSQL catalog access for
+the standard ACAM and `PANSTARRS_LOCAL` paths. Item 2 resolves that boundary as
+follows:
 
-1. `reproject` is loaded only when the ACAM reprojection renderer is called.
-   Direct use of that renderer reports how to install the visualization extra.
-2. `psycopg2` is optional at import time. The database-backed catalog function
-   reports how to install the database extra when it is requested without the
-   driver. Ordinary local-catalog and geometry paths do not require it.
-3. `pyds9` remains loaded only inside the DS9-specific function, which now
-   reports that both `pyds9` and a working DS9/XPA installation are required.
+1. `reproject` is a core dependency because ACAM visualization is enabled by
+   default and the WCS-aligned renderer depends on it.
+2. PostgreSQL support is a core dependency because `PANSTARRS_LOCAL` is a
+   standard mountain catalog path. The pip package uses `psycopg2-binary`,
+   while the Conda environment uses the equivalent `psycopg2` package.
+3. `pyds9` remains loaded only inside the DS9-specific function and is the one
+   optional integration. It reports that both `pyds9` and a working DS9/XPA
+   installation are required when explicitly requested.
 
-Tests should preserve these boundaries: normal non-DS9 operation must import
-without the optional packages, while each optional feature must fail clearly
-and locally when its dependency is absent.
+Tests should import and exercise the standard ACAM and database-backed paths in
+the CI environment. DS9 tests should be isolated and should fail clearly when
+the optional package or DS9/XPA service is absent.
 
 The plan should support the mountain environment without depending on exact
 patch versions. CI should use Python 3.12 and compatible dependency ranges,
@@ -96,9 +98,9 @@ It should not require live catalog access, DS9, or database credentials.
 2. Decide whether Python 3.8 remains a supported secondary target. If it does,
    add it to a CI matrix only after the mountain-compatible suite is stable;
    otherwise raise the minimum version and remove stale Python 2 metadata.
-3. Decide which of `reproject`, `psycopg2-binary`, and `pyds9` are required for
-   the ordinary mountain workflow and which are optional. Make imports and
-   dependency extras reflect that decision.
+3. Keep `reproject` and `psycopg2-binary` required for the ordinary mountain
+   workflow, while keeping `pyds9` optional. Make imports and dependency extras
+   reflect that decision.
 4. Reconcile runtime dependencies in `pyproject.toml`, `setup.py`,
    `requirements.txt`, and `environment.yml`.
 5. Add a small developer dependency group, initially containing:
@@ -218,9 +220,9 @@ Add `.github/workflows/python-tests.yml` with this behavior:
 - Add concurrency cancellation so superseded commits do not consume runners.
 
 The first import and CLI smoke tests should be representative of the mountain
-environment. If optional dependencies have been made lazy, include one test
-job that installs only the ordinary mountain dependency set and verifies that
-the package and non-DS9 CLI paths still import successfully.
+environment. They should install the ordinary mountain dependency set and
+verify that the package, ACAM path, database-catalog boundary, and non-DS9 CLI
+paths import successfully without requiring DS9/XPA.
 
 Do not initially make a coverage percentage a hard gate. First establish a
 stable baseline; then introduce a modest threshold that prevents the number
@@ -342,9 +344,9 @@ Each step should leave `main` installable and the general test suite passing.
 - [x] 1. Reconcile dependency metadata and define Python 3.12+ as the supported
   deployment floor. Verify the package metadata, environment definition, and
   requirements are consistent with the mountain target.
-- [x] 2. Resolve the mountain dependency boundary for `reproject`, database
-  catalogs, and DS9. Core imports now work without these optional packages,
-  while feature-specific calls provide actionable installation errors.
+- [x] 2. Resolve the mountain dependency boundary: `reproject` and PostgreSQL
+  catalog access are required for the standard workflow; only `pyds9` remains
+  optional for DS9/XPA interaction.
 - [ ] 3. Add development dependencies and basic pytest configuration.
 - [ ] 4. Add P0 deterministic tests and synthetic fixtures.
 - [ ] 5. Add Makefile commands that mirror CI.

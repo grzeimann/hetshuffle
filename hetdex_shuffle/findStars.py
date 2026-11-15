@@ -8,11 +8,8 @@ import sys
 import datetime
 import requests
 import uuid
-try:
-    import psycopg2
-    import psycopg2.extras
-except ImportError:  # Database-backed catalog access is optional.
-    psycopg2 = None
+import psycopg2
+import psycopg2.extras
 
 from astropy.io.votable import parse_single_table
 from astroquery.mast import Catalogs
@@ -42,17 +39,6 @@ from . import sqlcl
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     from astroquery.sdss import SDSS
-
-
-def _require_psycopg2():
-    """Return psycopg2 or explain how to enable database-backed catalogs."""
-    if psycopg2 is None:
-        raise ImportError(
-            "Database-backed Pan-STARRS access requires the optional "
-            "'psycopg2-binary' package; install it with "
-            "'pip install hetdex-shuffle[database]'"
-        )
-    return psycopg2
 
 
 def force(config, probe, candidates):
@@ -688,13 +674,12 @@ def panstarrs_query(ra_deg, dec_deg, rad_deg, mindet=1,
     return Pan
 
 def get_panstarrs_data(RA, DEC, SR, DB_USER, DB_PWD, DB_HOST, DB_DATABASE):
-    db_driver = _require_psycopg2()
     try:
-        dbLink = db_driver.connect(user=DB_USER, password=DB_PWD, host=DB_HOST, database=DB_DATABASE)
+        dbLink = psycopg2.connect(user=DB_USER, password=DB_PWD, host=DB_HOST, database=DB_DATABASE)
     except Exception as err:
         print(err, file=sys.stderr)
         exit(1)
-    cur = dbLink.cursor(cursor_factory=db_driver.extras.RealDictCursor)
+    cur = dbLink.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
     query = (
         'select "objID", "raMean", "decMean", "gPSFMag" as "gMeanPSFMag", '

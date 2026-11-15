@@ -31,14 +31,15 @@ dependencies = [
   "astropy",
   "astroquery",
   "matplotlib",
+  "reproject",
+  "psycopg2-binary",
   "six",
 ]
 
 [project.optional-dependencies]
-# Optional integrations; the core mountain workflow does not require these.
+# Optional integrations; the core mountain workflow requires reproject and
+# PostgreSQL catalog access. DS9 is not part of the standard workflow.
 oracle = ["cx_Oracle"]
-visualization = ["reproject"]
-database = ["psycopg2-binary"]
 ds9 = ["pyds9"]
 
 [project.scripts]
