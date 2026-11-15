@@ -14,3 +14,4 @@ six
 
 # Development tools:
 # python -m pip install --editable '.[dev]'
+# The dev extra also installs pre-commit for local hygiene hooks.

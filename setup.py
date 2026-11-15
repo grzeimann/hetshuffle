@@ -13,7 +13,7 @@ install_requires = ['numpy<2', 'scipy', 'astropy', 'astroquery', 'matplotlib',
 extras_require = {
     'oracle': ['cx_Oracle', ],
     'ds9': ['pyds9', ],
-    'dev': ['pytest', 'coverage', 'pytest-cov', 'ruff', ],
+    'dev': ['pytest', 'coverage', 'pytest-cov', 'ruff', 'pre-commit', ],
 }
 
 entry_points = {'console_scripts': ['do_shuffle = '

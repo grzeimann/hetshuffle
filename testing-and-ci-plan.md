@@ -281,6 +281,13 @@ Run the full test suite on pre-push only if it remains fast enough for normal
 development. CI remains authoritative; hooks are a convenience and should not
 make emergency recovery or scientific exploration unnecessarily difficult.
 
+The initial hook configuration follows this boundary: repository whitespace
+and merge-conflict checks run on changed files, Ruff is scoped to `tests/` until
+legacy source lint debt is addressed, and the complete test suite runs under
+coverage on pre-push. The first P1 tests cover proper-motion propagation,
+local Pan-STARRS row mapping, and focal-plane parsing without network or
+database access.
+
 ## Pull-request expectations
 
 Add a lightweight `.github/pull_request_template.md` containing:
@@ -376,9 +383,13 @@ Each step should leave `main` installable and the general test suite passing.
   protection settings in `.github/branch-protection.md`. Applying the settings
   in GitHub remains a repository-owner action because this checkout has no
   authenticated GitHub administration interface.
-- [ ] 8. Add pre-commit hooks and P1 tests incrementally.
+- [x] 8. Add pre-commit hooks and the first deterministic P1 tests. The hooks
+  cover repository hygiene, test-scoped Ruff, and pre-push coverage; the P1
+  tests cover proper-motion updates, `PANSTARRS_LOCAL` mapping, and focal-plane
+  parsing/empty-hardware handling. Additional P1 and integration tests remain
+  incremental work.
 
-Current checkpoint: items 1 through 7 are complete as repository changes; the
+Current checkpoint: items 1 through 8 are complete as repository changes; the
 GitHub branch-protection settings documented in `.github/branch-protection.md`
 still need to be applied by a repository owner. The branch is not being pushed
-until the remaining implementation items are finished.
+until the implementation work is reviewed and complete.
