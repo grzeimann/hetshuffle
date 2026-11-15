@@ -349,12 +349,14 @@ Each step should leave `main` installable and the general test suite passing.
   optional for DS9/XPA interaction.
 - [x] 3. Add development dependencies and basic pytest configuration through
   the `dev` extra and `pytest.ini`.
-- [ ] 4. Add P0 deterministic tests and synthetic fixtures.
+- [x] 4. Add P0 deterministic tests and synthetic fixtures. The initial suite
+  contains 17 network-free tests for package/configuration behavior,
+  astrometry, ACAM geometry and rendering, star selection, and output formats.
 - [ ] 5. Add Makefile commands that mirror CI.
 - [ ] 6. Add the GitHub Actions test workflow.
 - [ ] 7. Add the pull-request template and configure branch protection.
 - [ ] 8. Add pre-commit hooks and P1 tests incrementally.
 
-Current checkpoint: items 1 through 3 are complete and committed locally. The
+Current checkpoint: items 1 through 4 are complete and committed locally. The
 branch is not being pushed until the remaining implementation items are
 finished.
