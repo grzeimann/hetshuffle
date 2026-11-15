@@ -35,8 +35,8 @@ commands:
 
 ```ini
 [user]
-    name = Greg Zeimann
-    email = gregz@astro.as.utexas.edu
+    name = Your Name
+    email = you@example.com
 
 [core]
     editor = nano
