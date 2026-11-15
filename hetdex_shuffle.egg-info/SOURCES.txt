@@ -1,12 +1,17 @@
+Changelog
+LICENSE
 MANIFEST.in
 README.txt
 ez_setup.py
+pyproject.toml
 requirements.txt
 setup.py
 hetdex_shuffle/__init__.py
+hetdex_shuffle/astrometry.py
 hetdex_shuffle/copy_config.py
 hetdex_shuffle/do_shuffle_target.py
 hetdex_shuffle/findStars.py
+hetdex_shuffle/fplane_provider.py
 hetdex_shuffle/handle_local_catalogue.py
 hetdex_shuffle/obj_dist_ifu_vis.py
 hetdex_shuffle/parang.py

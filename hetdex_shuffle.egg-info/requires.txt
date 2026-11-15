@@ -1,10 +1,11 @@
-numpy
+numpy<2
 scipy
 astropy
 astroquery
 matplotlib
+reproject
 pyds9
-pyhetdex
+psycopg2-binary
 six
 
 [oracle]
