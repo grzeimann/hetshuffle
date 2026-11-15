@@ -64,8 +64,8 @@
         * hetdex_shuffle/configs/shuffle.cfg: revert to previous limits on gc1 and gc2 (wfs1 problem)
 
 2019-07-23  Greg Zeimann <gregz@astro.as.utexas.edu>:
-	* hetdex_shuffle/do_shuffle_target.py: correct 00:00:00 issue making ra negative 
-	* hetdex_shuffle/shuffle.py: removed aggressive search 
+	* hetdex_shuffle/do_shuffle_target.py: correct 00:00:00 issue making ra negative
+	* hetdex_shuffle/shuffle.py: removed aggressive search
 
 2019-05-24  Greg Zeimann <gregz@astro.as.utexas.edu>:
 	* hetdex_shuffle/configs/shuffle.cfg: new limits on gc1 and gc2 to avoid wfs1
@@ -166,7 +166,7 @@
 	* hetdex_shuffle/shuffle.py: small edits to cary the new information for TIC
 
 2017-11-20  Greg Zeimann <gregz@astro.as.utexas.edu>
-	* hetdex_shuffle/do_shuffle_target.py: changed "visualization" to "visualisation".  
+	* hetdex_shuffle/do_shuffle_target.py: changed "visualization" to "visualisation".
 
 2017-11-03  Greg Zeimann <gregz@astro.as.utexas.edu>
 	* hetdex_shuffle/do_shuffle_target.py: added "--hpf" option for selecting only mdwarfs
@@ -213,7 +213,7 @@
 
 
 2017-07-12  Greg Zeimann <gregz@astro.as.utexas.edu>
-	* hetdex_shuffle/do_shuffle_target.py: fixed "if" statement in ifu_index() 
+	* hetdex_shuffle/do_shuffle_target.py: fixed "if" statement in ifu_index()
 
 2017-07-07  Greg Zeimann <gregz@astro.as.utexas.edu>
 	* hetdex_shuffle/do_shuffle_target.py: Call of HET_PA from shuffle to get PA for given input AZ
@@ -221,7 +221,7 @@
 	* hetdex_shuffle/findstars.py: return the catalog name for later use to print in the OCD *cfg FILE
 	* hetdex_shuffle/parang.py: adjusting the code for the same altitude as TCS uses (55.055223), returning AZ as well as PA
 
-2017-07-06  Greg Zeimann <gregz@astro.as.utexas.edu> 
+2017-07-06  Greg Zeimann <gregz@astro.as.utexas.edu>
 	* hetdex_shuffle/shuffle.py: always report the "az=" in *.cfg file for OCD
 
 2017-07-05  Greg Zeimann <gregz@astro.as.utexas.edu>
@@ -273,10 +273,10 @@
 2017-03-01 Karl Gebhardt <gebhardt@astro.as.utexas.edu>
 
 	* hetdex_shuffle/configs/fplane.txt: update fplane file
-	
+
 2017-03-01 Daniel Farrow <dfarrow@mpe.mpg.de>
 
-    * hetdex_shuffle/visualize.py: Fix bug introduced by merge 
+    * hetdex_shuffle/visualize.py: Fix bug introduced by merge
 
 2017-02-28  Francesco Montesano <montefra@mpe.mpg.de>
 
@@ -357,32 +357,32 @@
 	* shuffle/config/shuffle.cfg: added directory entry for HETcommands
 	* shuffle/shuffle.py: HETcommands is written out for each target.  Naming
 		scheme includes the target IFU and the track in addition to the targetID.
-  
+
 2016-08-27  Greg Zeimann <gregz@astro.as.utexas.edu>
-	* shuffle/findstars.py: corrected the input to the force() function to be the 
+	* shuffle/findstars.py: corrected the input to the force() function to be the
 		appropriate catalog for each probe instead of just the gp1 catalog.
- 
+
 2016-08-25  Greg Zeimann <gregz@astro.as.utexas.edu>
 	* shuffle/shuffle.py: edited shout.hetcommands output to include path to ACAM images.
 
 2016-08-10  Greg Zeimann <gregz@astro.as.utexas.edu>
 	* shuffle/shuffle.py : added pa and config to the inputs of findStars.getStars.
 		Also, changed call for visualize_acam to use acam_star_cand which calls
-		on acam set mag limits versus the IFU mag limits. 
-	* shuffle/config/shuffle.cfg : added several inputs acam_nstars, acam_minsep, 
-		acam_magmin, acam_magmax.  This is for setting acam mag limits when 
-		setting up.  The current g,r limit are 22.  Also, added acam_x_origin, 
-		acam_y_origin, acam_pix_scale, acam_x_length, acam_y_length for 
+		on acam set mag limits versus the IFU mag limits.
+	* shuffle/config/shuffle.cfg : added several inputs acam_nstars, acam_minsep,
+		acam_magmin, acam_magmax.  This is for setting acam mag limits when
+		setting up.  The current g,r limit are 22.  Also, added acam_x_origin,
+		acam_y_origin, acam_pix_scale, acam_x_length, acam_y_length for
 		defining the acam geometry and whether a star falls in the acam.  This
 		can be used in visualize if desired, but is used in findStars.  It is
-		consistent with the visualize acam geometry from several debugging 
+		consistent with the visualize acam geometry from several debugging
 		sessions, but if there is an issue, look towards these variables and
 		findStars:stars_inside_acam
 	* shuffle/findStars.py : Edited getStars() to run stars_inside_acam() after an
 		SDSS catalog has been returned and if no stars are found, then use
 		USNO_A2.  stars_inside_acam() returns a boolean array for whether
 		a candidate star position is in the acam or not.
-  
+
 2016-08-09  Francesco Montesano  <montefra@mpe.mpg.de>
 
     * shuffle/configs/fplane.txt: updated
@@ -393,7 +393,7 @@
 	* shuffle/findStars.py : Revised queryUSNO_A2 to use astropy.vo
 		and added query2MASS as a new catalog search options
 	* shuffle/configs/shuffle.cfg : Adjusted the star catalog options
-		to be just SDSSDR9, CWISE, USNOA2, and 2MASS 
+		to be just SDSSDR9, CWISE, USNOA2, and 2MASS
 
 2016-07-21  Francesco Montesano  <montefra@mpe.mpg.de>
 
@@ -509,7 +509,7 @@
 2016-06-23  Francesco Montesano  <montefra@mpe.mpg.de>
 
     * shuffle/parang.cpp: removed
-    * shuffle/sqlcl.py: PEP8 and __future__ 
+    * shuffle/sqlcl.py: PEP8 and __future__
 
 2016-06-22  Francesco Montesano  <montefra@mpe.mpg.de>
 
@@ -662,12 +662,12 @@
 
 2016-04-25  Greg Zeimann <gregz@astro.as.utexas.edu>
 	* do_shuffle_target.py: Allows shuffle to place a target/center on a particular
-	IFU Slot ID.  
+	IFU Slot ID.
 	* src/shuffle.py: made edits for for new targeting possiblities
 	* src/visualize.py: made edits for visualizing target and DSS ds9 option
 	* shuffle.cfg: Changed magnitudes for GP1, WFS1, WFS2 to very faint since they are not
-	currently available and this simple/stupid modification makes them less important in the shuffle 
-	algorithm. 
+	currently available and this simple/stupid modification makes them less important in the shuffle
+	algorithm.
 
 2016-03-21  Greg Zeimann <gregz@astro.as.utexas.edu>
 	* src/visualize.py: removed "scale" from input argument call for "retrieve_image_DSS"
@@ -695,7 +695,7 @@
 	or wave front sensor probe
 	* src/shuffle.py: added call to visualize the ACAM field if key is
 	set
-	
+
 2015-11-13  Francesco Montesano  <montefra@mpe.mpg.de>
 
     * readme.txt: update readme file
@@ -710,11 +710,11 @@
 2015-11-04 Daniel Farrow <dfarrow@mpe.mpg.de>
 
     * readme.txt: Added documentation for how to use
-      local catalogues instead of online databases. 
-      Added the contributors to the top of the 
+      local catalogues instead of online databases.
+      Added the contributors to the top of the
       document.
     * Changlelog: Added log entry from 2015-03-20 that I forgot
-                  to add at the time 
+                  to add at the time
 
 2015-10-30  Sungryong Hong  <shong@astro.as.utexas.edu>
 
@@ -728,7 +728,7 @@
 
 2015-10-11  Greg Zeimann <gregz@astro.as.utexas.edu>
 	* src/visualize.py: added exception for HTTP error in image retrieval
-	* src/visualize.py: added PA visualization 
+	* src/visualize.py: added PA visualization
 	* src/visualize.py: included patrol regions for guide and wavefront sensors
 	* shuffle.cfg: a bit messy still, but includes patrol region angles for guide
 	and wavefront sensors
@@ -791,7 +791,7 @@
 
 2014-04-28  Maximilian Fabricius  <mxhf@mpe.mpg.de>
 
-	* src/shuffle.py: Improved reporting on why a shuffle fails (see .info file). 
+	* src/shuffle.py: Improved reporting on why a shuffle fails (see .info file).
 
 2014-03-20  Maximilian Fabricius  <mxhf@mpe.mpg.de>
 
@@ -802,7 +802,7 @@
 	* ifu_center.dat: New version according to the "hexagonal" layout as given in "VIRUS IFU layout" V4 March 2014 by Gary Hill.
 	* survey_main.dat: New version according Chi Ting's proposed layout and implemented in Martin's planning tool. The main field.
 	* survey_eq.dat: New version according Chi Ting's proposed layout and implemented in Martin's planning tool. The equatorial field.
- 
+
 2013-11-21  Maximilian Fabricius  <mxhf@mpe.mpg.de>
 
 	* src/findStars.py: Fixed to deal with new header line of SDSS (addresses Bug 33).
@@ -810,8 +810,8 @@
 
 2013-05-16 Yi-Hao Chen <yihao@mpe.mpg.de>
 
-	* src/sqlcl.py: Updated to query SDSS DR9 database. 
-	* src/visualize.py: Improved DS9 visualization. 
+	* src/sqlcl.py: Updated to query SDSS DR9 database.
+	* src/visualize.py: Improved DS9 visualization.
 	* src/findStars.py: Now excludes saturated star when querying SDSS.
 	* src/shuffle.py: Minor syntax corrected.
 	* do_shuffle.py: Minor bug fixed.
@@ -821,13 +821,13 @@
 
 	* src/visualize.py: Added visualizeDS9(). Output format changed to png. Inverted image issue might remain.
 	* src/findStars.py: Now executes findStarCand inside function findGuideWFSSol
-	* src/shuffle.py: Updated visualization and usage of findGuideWFSSol(). 
+	* src/shuffle.py: Updated visualization and usage of findGuideWFSSol().
 	* shuffle.cfg: Added visualizeDS9 option.
 	* do_shuffle.py: Updated usage of shuffle.do().
 
 2013-05-10  Maximilian Fabricius  <mxhf@mpe.mpg.de>
 
-	* src/visualize.py: Fixed inverted image of shot visualisation. 
+	* src/visualize.py: Fixed inverted image of shot visualisation.
 
 2013-04-18  Maximilian Fabricius  <mxhf@mpe.mpg.de>
 

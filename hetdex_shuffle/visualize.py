@@ -699,10 +699,10 @@ def plotFocalPlaneLRS(dra, ddec, pa, scale, ifu_centers, ifu_ids, dec, im_size,
             patches.append(Rectangle((x_rect, y_rect),
                            width=15., height=15.,
                            angle=pa+dpalrs2))
-        else: 
+        else:
             patches.append(Circle((x_rect, y_rect),
                            5.))
-            
+
         if text:
             # x and y coordinates of the text
             xl = x_rect - 0.*lrs_sizex/2.
@@ -1193,7 +1193,7 @@ def rotate(angle, size, points, resample=0, expand=0, center=None,
            translate=None):
 
     """
-    mF: essential rotation code stolen from PIL.Image to 
+    mF: essential rotation code stolen from PIL.Image to
     compute x,y coordinates after rotation.
     """
     angle = angle % 360.0
@@ -1201,7 +1201,7 @@ def rotate(angle, size, points, resample=0, expand=0, center=None,
     w, h = size
 
     post_trans = (0, 0)
-    rotn_center = (w / 2.0, h / 2.0)  
+    rotn_center = (w / 2.0, h / 2.0)
 
     angle = - math.radians(angle)
     matrix = [
@@ -1532,16 +1532,16 @@ def visualize_acam(s, acamloc, ifu_centers, ifu_ids, guideWFSSol,
     im1 = Image.open(filename)
 
     rot_cal_star_cand_imxy = rotate(pa_offset, im1.size, cal_star_cand_imxy)
-    with open(filename.replace(".jpg",".csv"),"w") as f: 
+    with open(filename.replace(".jpg",".csv"),"w") as f:
         s = "#RA, Dec, acam_x, acam_y, img_x, img_y, g, r, i\n"
         f.write(s)
-        for (ra,dec),(x,y),(ix,iy), (g, r, i) in zip(cal_star_cand_radec, 
-                                                     cal_star_cand_acamxy, 
+        for (ra,dec),(x,y),(ix,iy), (g, r, i) in zip(cal_star_cand_radec,
+                                                     cal_star_cand_acamxy,
                                                      rot_cal_star_cand_imxy,
                                                      cal_star_cand_gri):
             s = "{:10.6f}, {:11.6f}, {:7.2f}, {:7.2f}, {:7.2f}, {:7.2f}, {:7.2f}, {:7.2f}, {:7.2f}\n".format( ra,dec,x,y,ix,iy,g,r,i )
             f.write(s)
-    
+
     im1.rotate(pa_offset).save(filename)
     log.debug('Visualization rotated image is saved to %s', filename)
     return goodchoice
@@ -1605,7 +1605,13 @@ def visualizeDS9(s, r, ifu_centers, ifu_ids, guideWFSSol, cal_star_cand,
     # NOTE: leave the pyds9 import in the functions using it, this way the
     # setting of the xpa_method in the code has effect
     log = logging.getLogger('shuffle')
-    import pyds9
+    try:
+        import pyds9
+    except ImportError as exc:
+        raise ImportError(
+            "DS9 visualization requires the optional 'pyds9' package and a "
+            "working DS9/XPA installation"
+        ) from exc
     ds9 = pyds9.DS9()
     ds9.set('height 1000')
     ds9.set('width 1200')
@@ -1930,7 +1936,7 @@ def _arcsec_to_acam_poly(poly_arcsec, acam_pix_scale, acam_x_origin, acam_y_orig
 
 
 
-def plotFocalPlaneLRS_acam(pa, ra0, dec0, ifu_centers_deg, ifu_ids, config, color='lime', 
+def plotFocalPlaneLRS_acam(pa, ra0, dec0, ifu_centers_deg, ifu_ids, config, color='lime',
                            linewidth=0.8, text_ax=None, text_rot=None, wcs=None, fplane_provider=None):
     """
     Plot LRS2/HPF overlays using ACAM pixel coordinates.
