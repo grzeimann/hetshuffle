@@ -1,113 +1,195 @@
 # HET Shuffle (hetdex-shuffle)
 
-The HET shuffle tool selects viable guide and wavefront-sensor stars and produces verified target placements for HET observations. This README is written for on-mountain usage by astronomers/TOs setting up HET tracks.
+[![CI](https://github.com/grzeimann/hetshuffle/actions/workflows/python-tests.yml/badge.svg)](https://github.com/grzeimann/hetshuffle/actions/workflows/python-tests.yml)
+[![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](LICENSE)
 
-If you are looking for developer-oriented details, see README.txt and the configs under hetdex_shuffle/configs/.
+HET Shuffle selects guide and wavefront-sensor stars and produces verified
+target placements for HET observations. It is used on the mountain by
+astronomers and telescope operators setting up HET tracks.
 
+For contributor procedures, see the [Git workflow](git-workflow.md). For the
+testing, CI, and scientific validation policy, see the
+[testing and CI plan](testing-and-ci-plan.md).
 
-- Console entry points installed:
-  - do_shuffle – main command to compute a shuffle for a target
-  - shuffle_config – copies example configuration files to your working directory
-  - shuffle_distances – helper for IFU/probe distance visualization
+## Install
 
+hetshuffle supports Python 3.12 or newer. The standard mountain workflow
+includes `reproject` and PostgreSQL catalog access through
+`psycopg2-binary`.
+`pyds9` is optional and is not required for ordinary operation or testing.
 
-Quick start
-- Ensure you have the required configuration files (shuffle.cfg and a valid fplane file).
-- Install the package (see Installation below).
-- Run do_shuffle with your target coordinates, track, IFU slot, optional offsets, and desired options.
+### Conda environment
 
+```bash
+conda env create --file environment.yml
+conda activate hetshuffle
+python -m pip install .
+```
 
-Installation
-You can install either with pip (PEP 517) or create a dedicated Conda environment.
+### Development installation
 
-Option A: pip (system/virtualenv)
-- Python 3.8+
-- From a checkout of this repository:
-  - pip install .
-  - Optional Oracle DB support: pip install .[oracle]
-- Notes about dependencies
-  - pyds9 and ds9 require X11 if you intend to use DS9 visualization.
+Install the development extra in the active environment to add pytest,
+coverage, Ruff, and pre-commit:
 
-Option B: Conda environment
-- conda env create -f environment.yml
-- conda activate hetshuffle
+```bash
+python -m pip install --editable '.[dev]'
+python -m pre_commit install --hook-type pre-commit
+python -m pre_commit install --hook-type pre-push
+```
 
+Optional integrations can be installed separately:
 
-Configuration files you will need
-- shuffle.cfg: Main runtime configuration. A ready-to-edit default lives at hetdex_shuffle/configs/shuffle.cfg. You can copy it to your working directory with:
-  - shuffle_config
-- fplane file: e.g., fplane.txt or fplaneall.txt from your site’s distribution. Path is passed at runtime via --fplane_file.
+```bash
+python -m pip install '.[ds9]'     # DS9/XPA support; may require X11
+python -m pip install '.[oracle]'  # Oracle catalog support
+```
 
+The package runtime dependencies are also listed in
+[requirements.txt](requirements.txt). The Conda environment is the preferred
+way to reproduce the supported mountain dependency boundary.
 
-Command-line usage
-Basic syntax (positional arguments then options):
-- do_shuffle RA DEC RADIUS TRACK IFUSLOT [X_OFFSET] [Y_OFFSET] [TARGET] [options]
-  - RA: Right Ascension of the target, in hours (hh:mm:ss.ss)
-  - DEC: Declination of the target, in degrees (±dd:mm:ss.ss)
-  - RADIUS: Search radius in degrees for suitable guide/WFS stars (typical 0.0–1.0). 0.0 means use exact target area and rely on probes.
-  - TRACK: 0 = East, 1 = West
-  - IFUSLOT: Three-digit IFU slot ID (e.g., 058). Boresight is 000.
-  - X_OFFSET, Y_OFFSET: Optional small ACAM-plane offsets from the IFU center, in arcseconds (default 0.0, 0.0)
-  - TARGET: Optional name for the observation (default "Test")
+## Quickstart
 
-Common options
-- --config PATH_TO/shuffle.cfg
-- --fplane_file PATH_TO/fplaneall.txt
-- --catalog NAME (e.g., GAIA, PANSTARRS)
-- -v or --verbose (can be repeated)
-- --visualize PATH_TO/output.png to save sky overlays
-- --visualize_ACAM PATH_TO/acam.png to save ACAM-frame overlay
-- --visualize_probestars PATH_TO/probes.png for probe-star view
-- --epoch, --pmRA, --pmDEC for proper-motion handling
+Copy the packaged configuration files into a clean working directory:
 
-Example (generalized)
-- do_shuffle 08:00:16.08 "+40:29:56.00" 0 0 058 25.0 25.0 CARLA_J0800+4029_3 \
-  --catalog PANSTARRS -v \
-  --fplane_file ~/work/Backup/cure/Remedy/fplaneall.txt \
-  --config ~/work/code/hetshuffle/hetdex_shuffle/configs/shuffle.cfg
+```bash
+mkdir -p hetshuffle-run
+cd hetshuffle-run
+shuffle_config
+```
 
-Notes on the example
-- RA and DEC are quoted if they contain + or spaces.
-- RADIUS=0, TRACK=0 (East), IFUSLOT=058, offsets of +25.0" in X and Y, target name CARLA_J0800+4029_3.
-- Using the PANSTARRS catalog for star selection.
-- Using a specific fplane file and a known shuffle.cfg.
+Verify the command-line installation:
 
+```bash
+do_shuffle --help
+```
 
-Expected output
-What you should expect when a shuffle completes successfully:
-- Terminal log
-  - A summary of parsed inputs, selected guide and WFS stars, and computed probe angles.
-  - Warnings if targets fall outside patrol regions or if magnitude/sep cuts are tight.
-- Output files as directed by shuffle.cfg [General] section
-  - outfile: A text file listing the new shot positions; entries are appended if the file already exists.
-  - outinfo: A companion text file that includes extra information such as the coordinates and IDs of the selected guide and wavefront-sensor stars.
-  - Optional visualization products if enabled or passed via CLI:
-    - --visualize: Sky view PNG (DSS/SDSS/HiPS background) with IFU/probe overlays.
-    - --visualize_ACAM: ACAM-frame PNG. The tool also writes a CSV next to this image with columns:
-      RA, Dec, acam_x, acam_y, img_x, img_y, g, r, i
-      Only stars that fall within the ACAM footprint are listed.
-    - --visualize_probestars: PNG highlighting probe-star geometry and selections.
-- DS9
-  - If configured, a DS9 window may be launched and annotated according to your shuffle.cfg settings.
+Example network-backed shuffle using the standard PANSTARRS catalog:
 
-Return codes
-- 0 on success. Non-zero if configuration or geometric constraints fail, or if catalogs are unavailable.
+```bash
+do_shuffle 21:22:09.26 '+49:26:24.20' 0 0 603 0 0 J212209 \
+  --use_brightness true \
+  --visualize_probestars false \
+  --catalog PANSTARRS \
+  -v
+```
 
-Tips and troubleshooting
-- If catalogs time out, retry or switch to a different catalog via --catalog.
-- If Gaia proper-motion lookup fails because the default VizieR host is
-  unavailable, set a mirror explicitly, for example:
-  `HETSHUFFLE_VIZIER_SERVER=vizier.cfa.harvard.edu do_shuffle ...`
-- If no viable guide/WFS stars are found, try increasing RADIUS slightly or adjusting magnitude limits in shuffle.cfg.
-- Ensure the IFUSLOT is three digits (e.g., 058). The code normalizes it internally, but it’s good practice to supply the padded form.
-- For proper motion targets, supply --epoch, --pmRA, and --pmDEC to propagate to the observation epoch.
-- For ACAM orientation/offsets, relevant parameters are in shuffle.cfg under [General] and [offsets].
+The example requires access to the configured catalog and image services.
+Use `--config` and `--fplane_file` when running with site-specific files.
+Right Ascension is supplied in hours; declination accepts a signed
+degree-based sexagesimal value. Quote positive declinations containing `+`.
 
-Where things live
-- Example configs: hetdex_shuffle/configs/
-- Main executable module: hetdex_shuffle/do_shuffle_target.py
-- Visualization code: hetdex_shuffle/visualize.py
+## Command-line usage
 
-Acknowledgements and license
-- HETDEX collaboration; see LICENSE for terms.
-- Portions rely on Astropy, Astroquery, Matplotlib, and NumPy.
+```text
+do_shuffle RA DEC RADIUS TRACK IFUSLOT [X_OFFSET] [Y_OFFSET] [TARGET] [options]
+```
+
+- `RA`: target right ascension in hours, such as `08:00:16.08`.
+- `DEC`: target declination in degrees, such as `+40:29:56.00`.
+- `RADIUS`: search radius in degrees for guide and WFS stars.
+- `TRACK`: `0` for East or `1` for West.
+- `IFUSLOT`: three-digit target IFU slot; `000` is the boresight.
+- `X_OFFSET`, `Y_OFFSET`: optional ACAM-plane offsets in arcseconds.
+- `TARGET`: optional observation name.
+
+Common options include:
+
+- `--config PATH`: use a specific `shuffle.cfg`.
+- `--fplane_file PATH`: use a specific focal-plane file.
+- `--catalog NAME`: select a catalog such as `PANSTARRS`, `GAIA`, or
+  `PANSTARRS_LOCAL`.
+- `--visualize PATH`: write a sky-view visualization.
+- `--visualize_ACAM PATH`: write an ACAM-frame visualization.
+- `--visualize_probestars VALUE`: control probe-star visualization.
+- `--epoch`, `--pmRA`, `--pmDEC`: provide target proper-motion information.
+- `-v` or `--verbose`: increase logging verbosity; it can be repeated.
+
+## Configuration and data
+
+`shuffle_config` copies the packaged `shuffle.cfg` and `fplane.txt` into the
+current directory. The configuration controls catalog selection, patrol
+geometry, magnitude limits, visualization, output names, and output
+directories.
+
+The standard configuration uses:
+
+- `PANSTARRS` for network-based star selection.
+- `fplane.txt` for the focal-plane geometry.
+- ACAM and sky visualizations enabled by default.
+- `PANSTARRS_LOCAL` support through the `[database]` settings when the
+  mountain-local PostgreSQL catalog is used.
+
+For local catalog operation, configure `db_user`, `db_pwd`, `db_host`, and
+`db_database` in `shuffle.cfg`. Do not commit credentials or private
+configuration files.
+
+## Output products
+
+Depending on the configuration and selected visualization options, a
+successful shuffle can produce:
+
+- `shout.result`: shuffled target coordinates and selected probe IDs.
+- `shout.info`: shot metadata, displacement, calibration-star count, and
+  failure code.
+- `shout.probestars`, `shout.ifustars`, and `shout.acamstars`: selected star
+  catalogs.
+- `HETcommands/`: HET trajectory and probe-command files.
+- `images/`: sky-view JPEG products.
+- `ACAMimages/`: ACAM JPEG and CSV products.
+- `regions/`: DS9 region files.
+- `gp_wfs/`: guide and wavefront-sensor products when enabled.
+
+The exact filenames and directories are controlled by the `[General]` and
+`[directories]` sections of `shuffle.cfg`.
+
+## Troubleshooting
+
+- If catalog services time out, retry or select another supported catalog.
+- If Gaia proper-motion lookup returns no data, hetshuffle retains the catalog
+  coordinates and continues. A VizieR mirror can be selected with, for
+  example, `HETSHUFFLE_VIZIER_SERVER=vizier.cfa.harvard.edu`.
+- If no guide or WFS stars are found, increase `RADIUS` or adjust the
+  magnitude and separation limits in `shuffle.cfg`.
+- Keep `IFUSLOT` three digits, such as `058`; the command normalizes it
+  internally.
+- For target proper motion, provide `--epoch`, `--pmRA`, and `--pmDEC`.
+- Image-service warnings do not necessarily mean the shuffle failed. Check
+  the exit status, `shout.info`, and the generated image products. A fallback
+  image service may still produce valid visualizations.
+- DS9/XPA interaction is optional and is not required for ordinary tests.
+
+## Development and testing
+
+Run the local checks from an environment with the development extra installed:
+
+```bash
+python -m pre_commit run --all-files
+make ci
+```
+
+The repository currently has 20 deterministic, network-free tests covering
+configuration and CLI behavior, astrometry, ACAM geometry and rendering,
+catalog selection helpers, proper-motion handling, focal-plane parsing, and
+output formats. GitHub Actions runs the same Python 3.12 test workflow with
+coverage reporting.
+
+Live catalog, database, image-service, DS9/XPA, and full real-observation
+checks remain manual or scheduled integration work. They should not be
+required for ordinary pull requests.
+
+## Contributing
+
+New contributors should contact a repository maintainer and request GitHub
+`Write` access before beginning work. Approved contributors clone the
+canonical repository, work on feature branches, run the local hooks and
+`make ci`, and submit pull requests against protected `main`.
+
+See the [Git workflow](git-workflow.md),
+[pull-request template](.github/pull_request_template.md), and
+[branch-protection guidance](.github/branch-protection.md).
+
+## License
+
+HET Shuffle is distributed under the BSD 3-Clause License. See
+[LICENSE](LICENSE).
