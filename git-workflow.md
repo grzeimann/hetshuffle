@@ -48,6 +48,53 @@ Check the effective configuration with:
 git config --global --list
 ```
 
+## Create a development environment
+
+hetshuffle supports Python 3.12 or newer. The development extra installs the
+runtime dependencies, pytest, coverage, Ruff, and pre-commit:
+
+```bash
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install --editable '.[dev]'
+```
+
+Contributors who use Conda can instead create the runtime environment from
+`environment.yml`, activate it, and install the editable development extra:
+
+```bash
+conda env create --file environment.yml
+conda activate hetshuffle
+python -m pip install --editable '.[dev]'
+```
+
+The standard workflow includes `reproject` and PostgreSQL catalog access.
+`pyds9` is optional and is not required for ordinary tests or pull requests.
+
+Install both local hooks after installing the development extra:
+
+```bash
+python -m pre_commit install --hook-type pre-commit
+python -m pre_commit install --hook-type pre-push
+```
+
+The pre-commit hook checks file hygiene and runs Ruff on the test suite. The
+pre-push hook runs the complete pytest suite under coverage. CI remains the
+authoritative clean-environment check, so do not bypass a failed hook without
+understanding and documenting the reason.
+
+Verify the setup before starting work:
+
+```bash
+python --version
+python -m pre_commit run --all-files
+make ci
+```
+
+The first pre-commit run may update whitespace or other file-ending details;
+review those changes and run it again until it passes.
+
 ## Standard feature-branch workflow
 
 1. Start from an up-to-date local `main` branch. Do not develop directly on
@@ -91,10 +138,31 @@ git switch -c descriptive-branch-name
 Use short, descriptive branch names such as `fix-config-path` or
 `add-target-visualization`. Avoid spaces in branch names.
 
+If you do not have permission to push branches to the canonical repository,
+fork it first, clone your fork, and add the canonical repository as `upstream`:
+
+```bash
+git clone git@github.com:YOUR-USER/hetshuffle.git
+cd hetshuffle
+git remote add upstream https://github.com/grzeimann/hetshuffle.git
+git fetch upstream
+git switch -c descriptive-branch-name upstream/main
+```
+
+For a direct collaborator checkout, use the canonical clone commands above and
+start from `origin/main` instead.
+
 ### Commit and publish the change
 
-Run the project's relevant tests or checks before committing. Then review the
-staged diff and create a focused commit:
+Make the edit, add or update tests when behavior changes, and review the diff.
+The pre-commit hook runs automatically when you commit. Run the full local
+gate explicitly before publishing:
+
+```bash
+make ci
+```
+
+Then review the staged diff and create a focused commit:
 
 ```bash
 git status
@@ -110,6 +178,15 @@ Push subsequent commits with:
 ```bash
 git push
 ```
+
+Open a PR from the pushed branch. GitHub Actions will install the package in a
+fresh Python 3.12 environment and run the `Python 3.12 tests` check. The PR
+template records the exact local commands, scientific impact, and any
+data-dependent or manual verification that remains. Keep a new or untested
+feature as a draft until those details and the general test results are ready.
+
+For a fork, open the PR from `YOUR-USER:descriptive-branch-name` into
+`grzeimann/hetshuffle:main`. Fork pull requests run without repository secrets.
 
 Keep commits understandable and avoid messages such as `did stuff`. If a
 change is still in progress, mark the PR as a draft or include `WIP` in its
