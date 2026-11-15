@@ -3,8 +3,8 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+import configparser
 import pytest
-from six.moves import configparser
 
 
 os.environ.setdefault("MPLBACKEND", "Agg")
