@@ -2210,16 +2210,15 @@ def visualize_acam_clean(
     _draw_cardinal_directions(ax, acam_x_origin, acam_y_origin, pa, acam_offset, length=70)
 
     # Add image source name
-    source_names = {
-        "":"",
+    source_names_shortened = {
         "DSS": "DSS1",
         "Legacy DR11-south": "LS11",
         "CDS/P/PanSTARRS/DR1/g": "PS1", 
         "CDS/P/DSS2/blue": "DSS2", 
         "CDS/P/SDSS9/g": "SDSS9"
     }
-    if img_source in source_names:
-        source_label = source_names[img_source]
+    if img_source in source_names_shortened:
+        source_label = source_names_shortened[img_source]
     else:
         source_label = str(img_source)
     ax.text(
