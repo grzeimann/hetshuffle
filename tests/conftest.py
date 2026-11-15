@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+import configparser
 import os
 from pathlib import Path
 
-import configparser
 import pytest
 
 
