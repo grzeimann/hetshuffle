@@ -40,8 +40,9 @@ The repository currently has no test directory, CI workflow, development
 dependency extra, or pull-request template. Before relying on CI, reconcile
 the package metadata:
 
-- `pyproject.toml` lists `reproject`, but the legacy `setup.py` and
-  `requirements.txt` do not list it consistently.
+- The optional `reproject`, `pyds9`, and `psycopg2-binary` integrations must
+  remain consistently represented as extras in the packaging metadata and as
+  optional entries in environment setup instructions.
 - `pyproject.toml` declares Python `>=3.8`, `environment.yml` uses Python 3.11,
   and `setup.py` still advertises a Python 2.7 classifier. Choose and document
   the supported Python versions, then make the metadata agree.
@@ -65,23 +66,19 @@ The environment currently provides the core scientific stack:
 - NumPy 1.x, SciPy, Astropy, Astroquery, Matplotlib, and Six.
 
 The environment currently does not provide `reproject`, `pyds9`, or
-`psycopg2-binary`. This creates three decisions that should be resolved before
-making CI a merge gate:
+`psycopg2-binary`. Item 2 resolves that boundary as follows:
 
-1. `reproject` is imported at module load time by `visualize.py`, so it is
-   effectively required for importing the current visualization path. Either
-   install it as part of the mountain deployment and CI, or move the import to
-   the specific reprojection path and provide a clear error when that feature
-   is requested without it.
-2. `psycopg2` is imported at module load time by `findStars.py`, although the
-   database-backed catalog path is only one part of the workflow. Either
-   install it on the mountain or make database access an explicit optional
-   dependency with a lazy import and an actionable error. The ordinary local
-   catalog and geometry tests should not require a database client.
-3. `pyds9` is already imported inside the DS9-specific function, so it is a
-   good candidate to remain optional. Tests should verify that normal
-   non-DS9 operation works without it and that the DS9 path reports its
-   requirement clearly.
+1. `reproject` is loaded only when the ACAM reprojection renderer is called.
+   Direct use of that renderer reports how to install the visualization extra.
+2. `psycopg2` is optional at import time. The database-backed catalog function
+   reports how to install the database extra when it is requested without the
+   driver. Ordinary local-catalog and geometry paths do not require it.
+3. `pyds9` remains loaded only inside the DS9-specific function, which now
+   reports that both `pyds9` and a working DS9/XPA installation are required.
+
+Tests should preserve these boundaries: normal non-DS9 operation must import
+without the optional packages, while each optional feature must fail clearly
+and locally when its dependency is absent.
 
 The plan should support the mountain environment without depending on exact
 patch versions. CI should use Python 3.12 and compatible dependency ranges,
@@ -345,8 +342,9 @@ Each step should leave `main` installable and the general test suite passing.
 - [x] 1. Reconcile dependency metadata and define Python 3.12+ as the supported
   deployment floor. Verify the package metadata, environment definition, and
   requirements are consistent with the mountain target.
-- [ ] 2. Resolve the mountain dependency boundary for `reproject`, database
-  catalogs, and DS9.
+- [x] 2. Resolve the mountain dependency boundary for `reproject`, database
+  catalogs, and DS9. Core imports now work without these optional packages,
+  while feature-specific calls provide actionable installation errors.
 - [ ] 3. Add development dependencies and basic pytest configuration.
 - [ ] 4. Add P0 deterministic tests and synthetic fixtures.
 - [ ] 5. Add Makefile commands that mirror CI.
@@ -354,5 +352,6 @@ Each step should leave `main` installable and the general test suite passing.
 - [ ] 7. Add the pull-request template and configure branch protection.
 - [ ] 8. Add pre-commit hooks and P1 tests incrementally.
 
-Current checkpoint: item 1 is complete and committed locally. The branch is
-not being pushed until the remaining implementation items are finished.
+Current checkpoint: items 1 and 2 are complete and committed locally. The
+branch is not being pushed until the remaining implementation items are
+finished.

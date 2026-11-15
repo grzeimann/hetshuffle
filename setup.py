@@ -8,9 +8,14 @@ except ImportError:
 from setuptools import setup, find_packages
 
 install_requires = ['numpy<2', 'scipy', 'astropy', 'astroquery', 'matplotlib',
-                    'reproject', 'pyds9', 'psycopg2-binary', 'six']
+                    'six']
 
-extras_require = {'oracle': ['cx_Oracle', ]}
+extras_require = {
+    'oracle': ['cx_Oracle', ],
+    'visualization': ['reproject', ],
+    'database': ['psycopg2-binary', ],
+    'ds9': ['pyds9', ],
+}
 
 entry_points = {'console_scripts': ['do_shuffle = '
                                     'hetdex_shuffle.do_shuffle_target:main',

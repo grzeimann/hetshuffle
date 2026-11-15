@@ -4,11 +4,10 @@ scipy
 astropy
 astroquery
 matplotlib
-reproject
-pyds9
-psycopg2-binary
 six
 
-# optional requirements for shuffle. Uncomment the following lines to install
-# them
-#cx_Oracle
+# Optional integrations:
+# python -m pip install 'hetdex-shuffle[visualization]'  # ACAM reprojection
+# python -m pip install 'hetdex-shuffle[database]'      # database catalogs
+# python -m pip install 'hetdex-shuffle[ds9]'           # DS9/XPA display
+# python -m pip install 'hetdex-shuffle[oracle]'        # Oracle support

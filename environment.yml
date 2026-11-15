@@ -9,13 +9,13 @@ dependencies:
   - astropy
   - astroquery
   - matplotlib
-  - reproject
-  - psycopg2
   - pip
   - pip:
-      # pyds9 and ds9 may require X11; install via conda-forge if needed:
+      # Optional integrations can be installed after activating the env:
+      # - reproject
       # - pyds9
-      
+      # - psycopg2-binary
+
 # Notes:
 # - For optional Oracle support, install cx_Oracle:
 #   conda install -c conda-forge cx_oracle

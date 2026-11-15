@@ -31,15 +31,15 @@ dependencies = [
   "astropy",
   "astroquery",
   "matplotlib",
-  "reproject",
-  "pyds9",
-  "psycopg2-binary",
   "six",
 ]
 
 [project.optional-dependencies]
-# Mirrors setup.py extras_require
+# Optional integrations; the core mountain workflow does not require these.
 oracle = ["cx_Oracle"]
+visualization = ["reproject"]
+database = ["psycopg2-binary"]
+ds9 = ["pyds9"]
 
 [project.scripts]
 # Mirrors setup.py entry_points
