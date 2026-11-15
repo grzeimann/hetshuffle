@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pytest
 
-
 os.environ.setdefault("MPLBACKEND", "Agg")
 
 
