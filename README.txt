@@ -68,7 +68,7 @@ This command should be rerun if the setup.py file changes.
 ---------------------------------------
 
 ``hetdexshuffle`` depends on
-    
+
     numpy       # numerics
     scipy
     astropy     # fits files
@@ -305,14 +305,14 @@ The revision number is available as in the example:
 6) Using a local catalogue
 --------------------------
 
-A local catalogue can be used as the source of stars for shuffle, this avoids the 
+A local catalogue can be used as the source of stars for shuffle, this avoids the
 requirement of having a connection to an external database. For the finding charts
 an external database is still required.
 
 The location of the local catalogue is set by the localcat parameter in the config
 file (set to None for an external catalogue). Currently only FITS catalogues, from SDSS
-with the columns: 'objid', 'ra', 'dec', 'u', 'g', 'r', 'i', 'z' can be used. 
+with the columns: 'objid', 'ra', 'dec', 'u', 'g', 'r', 'i', 'z' can be used.
 
-Note: To add non-SDSS catalogues src/handle_local_catalogue.py needs to be extended, and 
-src/shuffle.py:do has to be modified to set the 'type' variable to something other than 
-the default SDSS. 
+Note: To add non-SDSS catalogues src/handle_local_catalogue.py needs to be extended, and
+src/shuffle.py:do has to be modified to set the 'type' variable to something other than
+the default SDSS.

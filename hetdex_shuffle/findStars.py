@@ -669,8 +669,8 @@ def panstarrs_query1(ra_deg, dec_deg, rad_deg, mindet=1,
 
 def panstarrs_query(ra_deg, dec_deg, rad_deg, mindet=1,
                     maxsources=30000):
-    Pan = Catalogs.query_region("%s %s" % (ra_deg, dec_deg), radius=rad_deg, 
-                               catalog="Panstarrs") 
+    Pan = Catalogs.query_region("%s %s" % (ra_deg, dec_deg), radius=rad_deg,
+                               catalog="Panstarrs")
     return Pan
 
 def get_panstarrs_data(RA, DEC, SR, DB_USER, DB_PWD, DB_HOST, DB_DATABASE):
@@ -739,7 +739,7 @@ def queryPANSTARRS_new(ra, dec, radius, debug=False):
     S[:, 7] = numpy.where(T['iApMag'] > 0.0, T['iApMag'], 0.0)
     S[:, 8] = numpy.where(T['zApMag'] > 0.0, T['zApMag'], 0.0)
     return S
-    
+
 
 def queryPANSTARRS(ra, dec, radius, debug=False):
     """
