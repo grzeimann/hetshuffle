@@ -31,8 +31,8 @@ git@github.com:grzeimann/hetshuffle.git
 
 The normal collaboration path is direct work in the canonical repository.
 People who are not yet contributors should contact a repository maintainer
-before creating a fork or opening a PR. The request should include their
-GitHub username and a short description of the work they intend to do.
+before beginning work or opening a PR. The request should include their GitHub
+username and a short description of the work they intend to do.
 
 After confirming the contributor, a maintainer should add them to the
 repository with GitHub `Write` access. This allows them to push feature
@@ -45,10 +45,9 @@ repository and use `origin` for the canonical remote. All work still goes on a
 feature branch and through a pull request; write access is not permission to
 push directly to `main`.
 
-Forks remain a fallback for people who are awaiting access, contributing from
-outside the collaboration, or unable to receive repository access. In that
-case, use the fork instructions below and open a PR against
-`grzeimann/hetshuffle:main`.
+People who are awaiting access or contributing from outside the
+collaboration should contact a maintainer before beginning work. This project
+does not use a fork-based contributor workflow.
 
 ## Git configuration
 
@@ -162,19 +161,7 @@ git switch -c descriptive-branch-name
 Use short, descriptive branch names such as `fix-config-path` or
 `add-target-visualization`. Avoid spaces in branch names.
 
-If you are using the fallback fork workflow, clone your fork and add the
-canonical repository as `upstream`:
-
-```bash
-git clone git@github.com:YOUR-USER/hetshuffle.git
-cd hetshuffle
-git remote add upstream https://github.com/grzeimann/hetshuffle.git
-git fetch upstream
-git switch -c descriptive-branch-name upstream/main
-```
-
-For a direct collaborator checkout, use the canonical clone commands above and
-start from `origin/main` instead.
+Use the canonical clone commands above and start from `origin/main`.
 
 ### Commit and publish the change
 
@@ -208,9 +195,6 @@ fresh Python 3.12 environment and run the `Python 3.12 tests` check. The PR
 template records the exact local commands, scientific impact, and any
 data-dependent or manual verification that remains. Keep a new or untested
 feature as a draft until those details and the general test results are ready.
-
-For a fork, open the PR from `YOUR-USER:descriptive-branch-name` into
-`grzeimann/hetshuffle:main`. Fork pull requests run without repository secrets.
 
 Keep commits understandable and avoid messages such as `did stuff`. If a
 change is still in progress, mark the PR as a draft or include `WIP` in its
