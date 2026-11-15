@@ -197,7 +197,10 @@ ci: lint coverage
 
 The exact tab characters should be used in the actual Makefile. Contributors
 should be able to run `make ci` locally and get substantially the same result
-as GitHub Actions.
+as GitHub Actions. The initial lint target checks `tests/`, because the legacy
+source currently has pre-existing Ruff diagnostics. Once that debt is cleaned
+up, expand the target to `python -m ruff check .` so all source files are
+covered by the lint gate.
 
 ### Phase 3: Add GitHub Actions
 
@@ -352,11 +355,13 @@ Each step should leave `main` installable and the general test suite passing.
 - [x] 4. Add P0 deterministic tests and synthetic fixtures. The initial suite
   contains 17 network-free tests for package/configuration behavior,
   astrometry, ACAM geometry and rendering, star selection, and output formats.
-- [ ] 5. Add Makefile commands that mirror CI.
+- [x] 5. Add Makefile commands that mirror CI, including lint, test, coverage,
+  combined CI, and cleanup targets. Initial linting is scoped to the new test
+  suite while legacy source lint debt remains documented.
 - [ ] 6. Add the GitHub Actions test workflow.
 - [ ] 7. Add the pull-request template and configure branch protection.
 - [ ] 8. Add pre-commit hooks and P1 tests incrementally.
 
-Current checkpoint: items 1 through 4 are complete and committed locally. The
+Current checkpoint: items 1 through 5 are complete and committed locally. The
 branch is not being pushed until the remaining implementation items are
 finished.
