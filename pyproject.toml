@@ -41,6 +41,12 @@ dependencies = [
 # PostgreSQL catalog access. DS9 is not part of the standard workflow.
 oracle = ["cx_Oracle"]
 ds9 = ["pyds9"]
+dev = [
+  "pytest",
+  "coverage",
+  "pytest-cov",
+  "ruff",
+]
 
 [project.scripts]
 # Mirrors setup.py entry_points

@@ -11,3 +11,6 @@ six
 # Optional integration:
 # python -m pip install 'hetdex-shuffle[oracle]'        # Oracle support
 # python -m pip install 'hetdex-shuffle[ds9]'           # DS9/XPA display
+
+# Development tools:
+# python -m pip install --editable '.[dev]'
