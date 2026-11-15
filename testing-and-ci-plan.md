@@ -297,6 +297,10 @@ For a new or untested feature, use a draft PR. A PR should become ready for
 review only after the general suite passes and the contributor has described
 any manual or data-dependent verification that remains.
 
+The recommended GitHub branch protection settings are recorded in
+`.github/branch-protection.md`. Applying those settings requires repository
+owner or administrator access and is not represented by a Git commit.
+
 ## Recommended test priorities
 
 ### P0: required before the first CI merge gate
@@ -368,9 +372,13 @@ Each step should leave `main` installable and the general test suite passing.
   read-only repository permissions, fork-safe pull-request triggers,
   cancellation of superseded runs, Ruff, pytest coverage, and uploaded test
   reports.
-- [ ] 7. Add the pull-request template and configure branch protection.
+- [x] 7. Add the pull-request template and record the required branch
+  protection settings in `.github/branch-protection.md`. Applying the settings
+  in GitHub remains a repository-owner action because this checkout has no
+  authenticated GitHub administration interface.
 - [ ] 8. Add pre-commit hooks and P1 tests incrementally.
 
-Current checkpoint: items 1 through 6 are complete and committed locally. The
-branch is not being pushed until the remaining implementation items are
-finished.
+Current checkpoint: items 1 through 7 are complete as repository changes; the
+GitHub branch-protection settings documented in `.github/branch-protection.md`
+still need to be applied by a repository owner. The branch is not being pushed
+until the remaining implementation items are finished.
