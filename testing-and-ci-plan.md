@@ -227,6 +227,12 @@ environment. They should install the ordinary mountain dependency set and
 verify that the package, ACAM path, database-catalog boundary, and non-DS9 CLI
 paths import successfully without requiring DS9/XPA.
 
+The initial workflow uses the same Python 3.12 package installation and local
+test command pattern as the Makefile. It runs the current test-scoped Ruff
+gate, then writes JUnit and coverage reports and uploads them even when tests
+fail. The workflow does not use secrets or execute fork code in the context of
+the base repository.
+
 Do not initially make a coverage percentage a hard gate. First establish a
 stable baseline; then introduce a modest threshold that prevents the number
 from declining. Coverage is a guide, not a substitute for scientifically
@@ -358,10 +364,13 @@ Each step should leave `main` installable and the general test suite passing.
 - [x] 5. Add Makefile commands that mirror CI, including lint, test, coverage,
   combined CI, and cleanup targets. Initial linting is scoped to the new test
   suite while legacy source lint debt remains documented.
-- [ ] 6. Add the GitHub Actions test workflow.
+- [x] 6. Add the GitHub Actions test workflow for Python 3.12 with pip caching,
+  read-only repository permissions, fork-safe pull-request triggers,
+  cancellation of superseded runs, Ruff, pytest coverage, and uploaded test
+  reports.
 - [ ] 7. Add the pull-request template and configure branch protection.
 - [ ] 8. Add pre-commit hooks and P1 tests incrementally.
 
-Current checkpoint: items 1 through 5 are complete and committed locally. The
+Current checkpoint: items 1 through 6 are complete and committed locally. The
 branch is not being pushed until the remaining implementation items are
 finished.
