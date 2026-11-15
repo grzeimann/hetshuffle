@@ -17,7 +17,7 @@ from astroquery.mast import Catalogs
 import numpy
 import scipy.spatial.distance as cdist
 from astroquery.vo_conesearch import vos_catalog
-from astroquery.vizier import Vizier
+from astroquery.vizier import Vizier, conf as vizier_conf
 import astropy.units as u
 import astropy.coordinates as coord
 from astropy.coordinates import SkyCoord
@@ -258,6 +258,24 @@ def stars_inside_acam(ra, dec, oo, pa, config):
     return inside
 
 
+def _vizier_mirrors():
+    """Return VizieR mirrors in a useful order for the Gaia queries.
+
+    Older astroquery releases default to ``vizier.u-strasbg.fr``, which no
+    longer resolves.  Keep that configured value as a last resort for users
+    who have a custom setup, but try current mirrors first.  An environment
+    override is useful for sites with their own preferred mirror.
+    """
+    override = os.environ.get("HETSHUFFLE_VIZIER_SERVER")
+    configured = str(vizier_conf.server)
+    mirrors = ([override] if override else []) + [
+        "vizier.cfa.harvard.edu",
+        "vizier.idia.ac.za",
+        configured,
+    ]
+    return list(dict.fromkeys(mirror for mirror in mirrors if mirror))
+
+
 def queryGAIA2(ra, dec, boxsize, maxsources=10000):
     """
     Queries USNO_A2.
@@ -273,18 +291,40 @@ def queryGAIA2(ra, dec, boxsize, maxsources=10000):
     log.debug("queryGAIA: dec     = %f ", dec)
     log.debug("queryGAIA: boxsize = %f ", boxsize)
 
-    vquery = Vizier(columns=['Source', 'RA_ICRS', 'DE_ICRS',
-                             'phot_g_mean_mag', '_RAJ2000', '_DEJ2000',
-                             'pmRA', 'pmDE'],
-                    row_limit=maxsources)
-
     field = coord.SkyCoord(ra=ra, dec=dec, unit=(u.deg, u.deg), frame='fk5')
-    D = vquery.query_region(field, width=("%fd" % boxsize),
-                            catalog="I/345/gaia2")
-    try:
-        Data = D[0]
-    except Exception:
+    Data = None
+    query_errors = []
+    for mirror in _vizier_mirrors():
+        try:
+            vquery = Vizier(columns=['Source', 'RA_ICRS', 'DE_ICRS',
+                                     'phot_g_mean_mag', '_RAJ2000',
+                                     '_DEJ2000', 'pmRA', 'pmDE'],
+                            row_limit=maxsources,
+                            timeout=10,
+                            vizier_server=mirror)
+            D = vquery.query_region(field, width=("%fd" % boxsize),
+                                    catalog="I/345/gaia2")
+            if len(D) != 0:
+                Data = D[0]
+                break
+        except Exception as exc:
+            query_errors.append("%s: %s" % (mirror, exc))
+
+    if Data is None:
+        if query_errors:
+            log.debug("All Gaia VizieR queries failed: %s", "; ".join(query_errors))
+        log.info("Gaia VizieR lookup returned no data; retaining catalog positions")
         return numpy.array([])
+
+    gmag_column = next((name for name in ("Gmag", "phot_g_mean_mag",
+                                          "<Gmag>")
+                        if name in Data.colnames), None)
+    if gmag_column is None:
+        log.debug("Gaia result has no G magnitude column; available columns: %s",
+                  Data.colnames)
+        log.info("Gaia VizieR result lacks a usable G magnitude; retaining catalog positions")
+        return numpy.array([])
+
     oo = []
     g_i = 1.  # g-i color
     for i, obj in enumerate(Data['Source']):
@@ -294,7 +334,7 @@ def queryGAIA2(ra, dec, boxsize, maxsources=10000):
         dec = Data['_DEJ2000'][i]
         pmra = Data['pmRA'][i]
         pmde = Data['pmDE'][i]
-        G = Data['Gmag'][i]
+        G = Data[gmag_column][i]
         g = G + 0.0939 + 0.6758 * g_i + 0.04 * g_i**2 - 0.003 * g_i**3
         if numpy.any([j for j in Data.mask[i]]):
             continue
@@ -1017,6 +1057,9 @@ def querySDSSDR9(ra, dec, boxsize, cachedir="cache"):
 
 
 def update_coords(cat1, cat2, current_epoch, log, epoch_cat1=2000.0):
+    if cat2 is None or len(cat2) == 0:
+        log.info("No Gaia proper-motion rows available; retaining catalog positions")
+        return cat1
     try:
         c1 = SkyCoord(cat1[:, 2]*u.deg, cat1[:, 3]*u.deg, frame='icrs')
         c2 = SkyCoord(cat2[:, 2]*u.deg, cat2[:, 3]*u.deg, frame='icrs')
@@ -1039,8 +1082,8 @@ def update_coords(cat1, cat2, current_epoch, log, epoch_cat1=2000.0):
         A[sel, -2] = deltaRA
         A[sel, -1] = deltaDE
         return A
-    except Exception:
-        log.warning("Could NOT update astrometry with proper motion")
+    except Exception as exc:
+        log.warning("Could NOT update astrometry with proper motion: %s", exc)
         return cat1
 
 

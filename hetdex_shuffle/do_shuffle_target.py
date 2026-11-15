@@ -551,6 +551,9 @@ def update_coords_for_proper_motion(ra, dec, epoch, log, args):
         return ra, dec
     try:
         pmcat = findStars.queryGAIA2(ra, dec, args.gaia2radius / 3600.)
+        if pmcat is None or len(pmcat) == 0:
+            log.info("No Gaia proper-motion match available; retaining target coordinates")
+            return ra, dec
         c1 = SkyCoord(ra*u.deg, dec*u.deg, frame='icrs')
         deltaRA = ((epoch - 2000.) * pmcat[:, -2] /
                    1e3 / 3600. / numpy.cos(dec * numpy.pi / 180.))
@@ -576,8 +579,8 @@ def update_coords_for_proper_motion(ra, dec, epoch, log, args):
             return ra, dec
         else:
             return ra, dec
-    except Exception:
-        log.warning("Could NOT update astrometry with proper motion")
+    except Exception as exc:
+        log.warning("Could NOT update astrometry with proper motion: %s", exc)
         return ra, dec
 
 

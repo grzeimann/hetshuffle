@@ -95,6 +95,9 @@ Return codes
 
 Tips and troubleshooting
 - If catalogs time out, retry or switch to a different catalog via --catalog.
+- If Gaia proper-motion lookup fails because the default VizieR host is
+  unavailable, set a mirror explicitly, for example:
+  `HETSHUFFLE_VIZIER_SERVER=vizier.cfa.harvard.edu do_shuffle ...`
 - If no viable guide/WFS stars are found, try increasing RADIUS slightly or adjusting magnitude limits in shuffle.cfg.
 - Ensure the IFUSLOT is three digits (e.g., 058). The code normalizes it internally, but it’s good practice to supply the padded form.
 - For proper motion targets, supply --epoch, --pmRA, and --pmDEC to propagate to the observation epoch.
