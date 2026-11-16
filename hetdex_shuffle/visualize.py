@@ -1339,6 +1339,7 @@ def visualize_acam(s, acamloc, ifu_centers, ifu_ids, guideWFSSol,
             ifu_ids,
             config,
             filename,
+            img_source=img_src,
             target_ra=ra_input,
             target_dec=dec_input,
             fplane_provider=fplane_provider,
@@ -2078,6 +2079,7 @@ def visualize_acam_clean(
     ifu_ids,
     config,
     outfile,
+    img_source=None,
     target_ra=None,
     target_dec=None,
     fplane_provider=None,
@@ -2212,6 +2214,39 @@ def visualize_acam_clean(
 
     # cardinal directions
     _draw_cardinal_directions(ax, acam_x_origin, acam_y_origin, pa, acam_offset, length=70)
+
+    # Add image source name
+    source_names = {
+        "": "None",
+        None:"None",
+        "DSS": "DSS1",
+        "Legacy DR11-south": "LS11-g",
+        "CDS/P/PanSTARRS/DR1/g": "PS1-g", 
+        "CDS/P/DSS2/blue": "DSS2-blue", 
+        "CDS/P/SDSS9/g": "SDSS9-g"
+    }
+    if img_source in source_names:
+        source_label = f"Image: {source_names[img_source]}"
+    else:
+        source_label = f"Image: {img_source}"
+    ax.text(
+        0.01, 
+        0.97,
+        source_label,
+        ha='left',
+        va='bottom',
+        transform=ax.transAxes,
+        color='white',
+        path_effects=[
+            pe.Stroke(
+                linewidth=2.5, 
+                foreground='black'
+            ),
+            pe.Normal(),
+        ],
+        fontsize=8,
+        zorder=16
+    )
 
     # If target RA/Dec provided, mark where it lands on the ACAM image with a star
     if (target_ra is not None) and (target_dec is not None):
