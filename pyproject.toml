@@ -11,13 +11,15 @@ license = {file = "LICENSE"}
 authors = [
   { name = "HETDEX collaboration" },
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.12"
 keywords = ["astronomy", "HETDEX", "shuffle"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Environment :: Console",
   "Intended Audience :: Science/Research",
-  "License :: OSI Approved :: GNU General Public License (GPL)",
+  "License :: OSI Approved :: BSD License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
   "Operating System :: Unix",
   "Topic :: Scientific/Engineering :: Astronomy",
 ]
@@ -30,14 +32,22 @@ dependencies = [
   "astroquery",
   "matplotlib",
   "reproject",
-  "pyds9",
   "psycopg2-binary",
   "six",
 ]
 
 [project.optional-dependencies]
-# Mirrors setup.py extras_require
+# Optional integrations; the core mountain workflow requires reproject and
+# PostgreSQL catalog access. DS9 is not part of the standard workflow.
 oracle = ["cx_Oracle"]
+ds9 = ["pyds9"]
+dev = [
+  "pytest",
+  "coverage",
+  "pytest-cov",
+  "ruff",
+  "pre-commit",
+]
 
 [project.scripts]
 # Mirrors setup.py entry_points

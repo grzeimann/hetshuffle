@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.11
+  - python=3.12
   - numpy<2
   - scipy
   - astropy
@@ -13,9 +13,9 @@ dependencies:
   - psycopg2
   - pip
   - pip:
-      # pyds9 and ds9 may require X11; install via conda-forge if needed:
+      # Optional integration; DS9 may require X11:
       # - pyds9
-      
+
 # Notes:
 # - For optional Oracle support, install cx_Oracle:
 #   conda install -c conda-forge cx_oracle

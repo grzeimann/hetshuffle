@@ -1,0 +1,35 @@
+default_language_version:
+  python: python3.12
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+        args: ["--markdown-linebreak-ext=md,markdown,rst"]
+      - id: check-merge-conflict
+
+  # Keep the initial Ruff gate aligned with Makefile linting. Legacy source
+  # lint debt can be expanded into this hook after it is cleaned up.
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.9
+    hooks:
+      - id: ruff
+        name: ruff (tests)
+        files: ^tests/
+        args: [--fix]
+
+  # A full test run is useful before pushing, but is too expensive for every
+  # small commit. CI remains authoritative for all pull requests.
+  - repo: local
+    hooks:
+      - id: pytest-coverage-pre-push
+        name: pytest under coverage (pre-push)
+        entry: >-
+          bash -c 'python -m coverage run -m pytest -q &&
+          python -m coverage report -m &&
+          python -m coverage xml -o coverage.xml'
+        language: system
+        pass_filenames: false
+        stages: [pre-push]

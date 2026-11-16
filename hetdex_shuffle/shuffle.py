@@ -982,7 +982,7 @@ def precache(args, data, start=1, stop=numpy.inf):
     """
 
     log = logging.getLogger('shuffle')
-    
+
     result = []
     # TODO: make it a command line argument option
     config = args.config

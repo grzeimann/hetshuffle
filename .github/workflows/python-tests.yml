@@ -1,0 +1,60 @@
+name: Python tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Python 3.12 tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and development dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install ".[dev]"
+
+      # Keep this aligned with the local Makefile. The initial lint gate is
+      # scoped to tests while legacy source lint debt is addressed separately.
+      - name: Lint tests with Ruff
+        run: make lint
+
+      - name: Run tests with coverage
+        run: python -m coverage run -m pytest -q --junitxml=pytest.xml
+
+      - name: Generate coverage reports
+        if: always()
+        run: |
+          python -m coverage report -m || true
+          python -m coverage xml -o coverage.xml || true
+
+      - name: Upload coverage and pytest reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-py3.12
+          path: |
+            coverage.xml
+            .coverage
+            pytest.xml
+            .pytest_cache
+          if-no-files-found: ignore
