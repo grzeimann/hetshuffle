@@ -2222,10 +2222,20 @@ def visualize_acam_clean(
     else:
         source_label = str(img_source)
     ax.text(
-        0.02, 0.95,
+        0.02, 
+        0.97,
         source_label,
+        ha='left',
+        va='bottom',
         transform=ax.transAxes,
         color='white',
+        path_effects=[
+            pe.Stroke(
+                linewidth=2.5, 
+                foreground='black'
+            ),
+            pe.Normal(),
+        ],
         fontsize=8,
         zorder=16
     )
