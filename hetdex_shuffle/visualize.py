@@ -2211,18 +2211,19 @@ def visualize_acam_clean(
 
     # Add image source name
     source_names_shortened = {
+        "": "None",
         "DSS": "DSS1",
-        "Legacy DR11-south": "LS11",
-        "CDS/P/PanSTARRS/DR1/g": "PS1", 
-        "CDS/P/DSS2/blue": "DSS2", 
-        "CDS/P/SDSS9/g": "SDSS9"
+        "Legacy DR11-south": "LS11-g",
+        "CDS/P/PanSTARRS/DR1/g": "PS1-g", 
+        "CDS/P/DSS2/blue": "DSS2-blue", 
+        "CDS/P/SDSS9/g": "SDSS9-g"
     }
     if img_source in source_names_shortened:
-        source_label = source_names_shortened[img_source]
+        source_label = f"Image: {source_names_shortened[img_source]}"
     else:
-        source_label = str(img_source)
+        source_label = f"Image: {str(img_source)}"
     ax.text(
-        0.02, 
+        0.01, 
         0.97,
         source_label,
         ha='left',
