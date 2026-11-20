@@ -311,6 +311,10 @@ def parse_args(argv=None):
     parser.add_argument("--catalog", type=str, help="""Star catalog to use,
                         for example: GAIA""", default=None)
 
+    parser.add_argument("--image_service", type=str,
+                        help="""Image service to use: auto, CDS, Legacy,
+                        MAST, or DSS.""", default=None)
+
     for st in ['gp', 'wfs']:
         parser.add_argument("--" + st + "pickcol", type=int,
                             help="""Probe filter to be used.
@@ -391,7 +395,7 @@ def cl_to_config(args):
         general_args.append('force_'+o)
     general_args.extend(['localcat', 'interactive', 'use_brightness',
                          'fplane_file', 'gppickcol', 'wfspickcol', 'visualize',
-                         'visualize_ACAM', 'catalog', 'hpf'])
+                         'visualize_ACAM', 'catalog', 'image_service', 'hpf'])
     for o in ['g1', 'g2', 'w1', 'w2']:
         for p in ['min', 'max', 'targ']:
             general_args.append('dpatrol_' + o + p)

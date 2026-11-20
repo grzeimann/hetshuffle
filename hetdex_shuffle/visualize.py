@@ -51,6 +51,7 @@ from PIL import Image
 from io import BytesIO
 
 from . import findStars
+from .mast_cutouts import retrieve_image_mast
 
 matplotlib.rcParams['text.usetex'] = False
 
@@ -156,35 +157,46 @@ def SDSS_coverage(ra, dec):
 
 def retrieve_image(ra, dec, size, config, yflip, scale=1.5,
                    return_wcs=False):
-    """Retrieve a finder image, with independent fallbacks.
+    """Retrieve a finder image using the configured image service.
 
-    HiPS remains the preferred source.  If CDS is unavailable, use the
-    Legacy Survey southern cutout service, then ESO DSS, before returning the
-    existing blank-image fallback.
+    image_service = auto uses CDS HiPS, the combined Legacy Survey
+    cutout service, MAST PS1, and ESO DSS in that order before returning the
+    existing blank-image fallback. Explicit providers do not silently switch
+    to another provider when they fail.
 
     (ra, dec, size) in degree
     """
     log = logging.getLogger('shuffle')
 
-    try:
-        image = retrieve_image_hips(ra, dec, size, yflip, scale,
-                                    return_wcs=return_wcs)
-        if image[3]:
-            return image
-    except Exception as e:
-        log.warning("HiPS image retrieval failed: %s", e)
+    image_service = config.get("General", "image_service",
+                               fallback="auto").strip().lower()
+    providers = {
+        "cds": ("CDS HiPS", lambda: retrieve_image_hips(
+            ra, dec, size, yflip, scale, return_wcs=return_wcs)),
+        "legacy": ("Legacy Survey", lambda: retrieve_image_legacy(
+            ra, dec, size, yflip, scale, return_wcs=return_wcs)),
+        "mast": ("MAST PS1", lambda: retrieve_image_mast(
+            ra, dec, size, yflip, scale, return_wcs=return_wcs)),
+        "dss": ("ESO DSS", lambda: retrieve_image_DSS(
+            ra, dec, size, yflip, return_wcs=return_wcs)),
+    }
 
-    try:
-        return retrieve_image_legacy(ra, dec, size, yflip, scale,
-                                     return_wcs=return_wcs)
-    except Exception as e:
-        log.warning("Legacy Survey image retrieval failed: %s", e)
+    if image_service != "auto" and image_service not in providers:
+        valid = ", ".join(["auto"] + sorted(providers))
+        raise ValueError("Unknown image service {!r}; expected one of {}"
+                         .format(image_service, valid))
 
-    try:
-        return retrieve_image_DSS(ra, dec, size, yflip,
-                                  return_wcs=return_wcs)
-    except Exception as e:
-        log.warning("DSS image retrieval failed: %s", e)
+    service_names = (["cds", "legacy", "mast", "dss"]
+                     if image_service == "auto" else [image_service])
+    for service_name in service_names:
+        provider_name, provider = providers[service_name]
+        try:
+            image = provider()
+            if image[3]:
+                return image
+            log.warning("%s returned no usable image", provider_name)
+        except Exception as e:
+            log.warning("%s image retrieval failed: %s", provider_name, e)
 
     blank = return_blank_image(int(size * 3600. / scale), scale)
     return _retrieved_image(blank[0], blank[1], blank[2], blank[3],
@@ -245,7 +257,7 @@ def _retrieved_image(imarray, CD, url, source, image_wcs=None,
 
 def retrieve_image_legacy(ra, dec, fov_deg, yflip=True, scale=1.5,
                           return_wcs=False):
-    """Retrieve a Legacy Survey DR11-south FITS cutout.
+    """Retrieve a combined Legacy Survey DR11 FITS cutout.
 
     The Legacy Survey limits cutouts to 512 pixels, so enlarge the requested
     pixel scale when necessary to preserve the complete field of view.
@@ -257,7 +269,7 @@ def retrieve_image_legacy(ra, dec, fov_deg, yflip=True, scale=1.5,
     params = {
         "ra": ra,
         "dec": dec,
-        "layer": "ls-dr11-south",
+        "layer": "ls-dr11",
         "pixscale": pixscale,
         "size": size_pix,
         "bands": "g",
@@ -281,7 +293,7 @@ def retrieve_image_legacy(ra, dec, fov_deg, yflip=True, scale=1.5,
         imarray, CD = _flip_image_y_and_cd(imarray, CD)
 
     image_wcs = _wcs_from_header(header, imarray.shape, yflip=yflip)
-    return _retrieved_image(imarray, CD, response.url, 'Legacy DR11-south',
+    return _retrieved_image(imarray, CD, response.url, 'Legacy DR11',
                             image_wcs=image_wcs, return_wcs=return_wcs)
 
 
@@ -2220,9 +2232,10 @@ def visualize_acam_clean(
         "": "None",
         None:"None",
         "DSS": "DSS1",
-        "Legacy DR11-south": "LS11-g",
-        "CDS/P/PanSTARRS/DR1/g": "PS1-g", 
-        "CDS/P/DSS2/blue": "DSS2-blue", 
+        "Legacy DR11": "LS11-g",
+        "MAST/PS1/3pi/g": "MAST PS1-g",
+        "CDS/P/PanSTARRS/DR1/g": "PS1-g",
+        "CDS/P/DSS2/blue": "DSS2-blue",
         "CDS/P/SDSS9/g": "SDSS9-g"
     }
     if img_source in source_names:
@@ -2230,7 +2243,7 @@ def visualize_acam_clean(
     else:
         source_label = f"Image: {img_source}"
     ax.text(
-        0.01, 
+        0.01,
         0.97,
         source_label,
         ha='left',
@@ -2239,7 +2252,7 @@ def visualize_acam_clean(
         color='white',
         path_effects=[
             pe.Stroke(
-                linewidth=2.5, 
+                linewidth=2.5,
                 foreground='black'
             ),
             pe.Normal(),

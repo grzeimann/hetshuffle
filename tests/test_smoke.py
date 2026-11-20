@@ -22,12 +22,15 @@ def test_default_config_and_argument_parsing():
 
     config = load_config("/path/that/does/not/exist/shuffle.cfg")
     assert config.getboolean("General", "visualize_ACAM")
+    assert config.get("General", "image_service") == "auto"
     assert config.get("General", "catalog") == "PANSTARRS"
 
     config_path = Path(__file__).parents[1] / "hetdex_shuffle" / "configs" / "shuffle.cfg"
     args = parse_args([
         "-c",
         str(config_path),
+        "--image_service",
+        "MAST",
         "12:34:56",
         "--",
         "-30:15:00",
@@ -39,6 +42,10 @@ def test_default_config_and_argument_parsing():
     assert args.dec == pytest.approx(-30.25)
     assert args.radius == pytest.approx(0.01)
     assert args.ifuslot == "058"
+
+    from hetdex_shuffle.do_shuffle_target import cl_to_config
+    args = cl_to_config(args)
+    assert args.config.get("General", "image_service") == "MAST"
 
 
 def test_packaged_configuration_can_be_copied(tmp_path):
