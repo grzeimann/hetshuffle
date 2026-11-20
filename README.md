@@ -99,11 +99,19 @@ Common options include:
 - `--fplane_file PATH`: use a specific focal-plane file.
 - `--catalog NAME`: select a catalog such as `PANSTARRS`, `GAIA`, or
   `PANSTARRS_LOCAL`.
+- `--image_service NAME`: override the configured image service
+  (`auto`, `CDS`, `Legacy`, `MAST`, or `DSS`).
 - `--visualize PATH`: write a sky-view visualization.
 - `--visualize_ACAM PATH`: write an ACAM-frame visualization.
 - `--visualize_probestars VALUE`: control probe-star visualization.
 - `--epoch`, `--pmRA`, `--pmDEC`: provide target proper-motion information.
 - `-v` or `--verbose`: increase logging verbosity; it can be repeated.
+
+Image retrieval is controlled by `image_service` in the `[General]` section
+of `shuffle.cfg`. Supported values are `auto`, `CDS`, `Legacy`, `MAST`,
+and `DSS`. The default `auto` order is CDS HiPS, combined Legacy Survey
+DR11, MAST Pan-STARRS, then ESO DSS. If all services fail, a blank fallback
+image is produced.
 
 ## Configuration and data
 
@@ -168,7 +176,7 @@ python -m pre_commit run --all-files
 make ci
 ```
 
-The repository currently has 20 deterministic, network-free tests covering
+The repository currently has 38 deterministic, network-free tests covering
 configuration and CLI behavior, astrometry, ACAM geometry and rendering,
 catalog selection helpers, proper-motion handling, focal-plane parsing, and
 output formats. GitHub Actions runs the same Python 3.12 test workflow with

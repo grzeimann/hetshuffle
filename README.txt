@@ -127,11 +127,23 @@ Example in shuffle.cfg:
     [General]
     sdss_backend = astroquery
 
-If a backend fails or returns an invalid image, Shuffle will fall back to SkyView or PS1 per the existing logic and may write the `.image-missing` sentinel next to the output visualization.
+If an image provider fails or returns an invalid image, the configured
+`image_service` behavior determines whether the next automatic provider is
+tried; a blank placeholder is used if all providers fail.
 
 Primary imaging source and retrieval method
 ---------------------------------------
-Shuffle now retrieves finder images using the CDS HiPS service (hips2fits). The function `retrieve_image` calls `retrieve_image_hips`, which queries:
+Shuffle retrieves finder images through the `image_service` option in the
+`[General]` section of `shuffle.cfg`. Supported values are `auto`, `CDS`,
+`Legacy`, `MAST`, and `DSS`. The default `auto` order is CDS HiPS,
+combined Legacy Survey DR11, MAST Pan-STARRS, then ESO DSS, followed by a
+blank image if all providers fail.
+
+The same setting can be overridden on the command line with
+`--image_service NAME`.
+
+The CDS provider uses the HiPS service (hips2fits). The function
+`retrieve_image` calls `retrieve_image_hips`, which queries:
 - CDS/P/PanSTARRS/DR1/g
 - CDS/P/DSS2/blue
 - CDS/P/SDSS9/g
@@ -145,7 +157,10 @@ Configuration in shuffle.cfg under [General]:
     hips_width = 800
     hips_height = 800
 
-The returned tuple remains compatible with previous code paths: (imarray, CD, url, img_src), where img_src is the HiPS survey identifier. If HiPS retrieval fails for all configured surveys, a placeholder image is returned and normal fail-safe behavior applies.
+The returned tuple remains compatible with previous code paths: (imarray, CD,
+url, img_src), where img_src is the provider or HiPS survey identifier. If
+HiPS retrieval fails for all configured surveys, the next provider in the
+automatic chain is attempted.
 
 PS1 retrieval API note
 ---------------------------------------
