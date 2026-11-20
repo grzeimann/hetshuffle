@@ -28,7 +28,7 @@ class FakeResponse:
 
     def raise_for_status(self):
         if self.status_code >= 400:
-            raise RuntimeError("HTTP {}".format(self.status_code))
+            raise RuntimeError(f"HTTP {self.status_code}")
 
     def json(self):
         return self._json_payload
@@ -78,7 +78,7 @@ class SuccessfulSession:
             })
         if url.endswith("/files/test.fits"):
             return FakeResponse(content=self.fits_content)
-        raise AssertionError("unexpected GET: {}".format(url))
+        raise AssertionError(f"unexpected GET: {url}")
 
     def close(self):
         pass
@@ -150,7 +150,7 @@ def test_mast_failed_job_reports_service_error(monkeypatch):
             return FakeResponse(json_payload={"failed_jobs": 1})
         if url.endswith("/error"):
             return FakeResponse(text="worker could not locate PS1 stack")
-        raise AssertionError("unexpected GET: {}".format(url))
+        raise AssertionError(f"unexpected GET: {url}")
 
     session.get = failed_get
     monkeypatch.setattr(mast_cutouts.requests, "Session", lambda: session)
